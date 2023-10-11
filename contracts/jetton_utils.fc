@@ -35,3 +35,10 @@ slice calculate_user_jetton_wallet_address(slice owner_address, slice jetton_mas
     (int wc, _) = parse_std_addr(addr);
     throw_unless(333, wc == workchain);
 }
+
+
+int is_resolvable?(slice addr) inline {
+    (int wc, _) = parse_std_addr(addr);
+
+    return wc == workchain;
+}

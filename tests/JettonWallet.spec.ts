@@ -1,4 +1,11 @@
-import { Blockchain, SandboxContract, TreasuryContract, Verbosity, internal } from '@ton-community/sandbox';
+import {
+    Blockchain,
+    SandboxContract,
+    TreasuryContract,
+    Verbosity,
+    internal,
+    printTransactionFees
+} from '@ton-community/sandbox';
 import { Cell, toNano, beginCell, Address, SendMode } from 'ton-core';
 import { JettonWallet } from '../wrappers/JettonWallet';
 import { JettonMinter } from '../wrappers/JettonMinter';
@@ -17,7 +24,7 @@ import { randomAddress, getRandomTon } from './utils';
 */
 
 //jetton params
-let fwd_fee = 1804014n, gas_consumption = 14000000n, min_tons_for_storage = 10000000n;
+let fwd_fee = 1804014n, gas_consumption = 15000000n, min_tons_for_storage = 10000000n;
 
 describe('JettonWallet', () => {
     let jwallet_code = new Cell();
@@ -67,8 +74,7 @@ describe('JettonWallet', () => {
         let initialTotalSupply = await jettonMinter.getTotalSupply();
         const deployerJettonWallet = await userWallet(deployer.address);
         let initialJettonBalance = toNano('1000.23');
-        const mintResult = await jettonMinter.sendMint(deployer.getSender(), deployer.address, initialJettonBalance, toNano('0.05'), toNano('1'));
-
+        const mintResult = await jettonMinter.sendMint(deployer.getSender(), deployer.address, initialJettonBalance, toNano('0.05'), toNano('1'), jettonMinter.address);
         expect(mintResult.transactions).toHaveTransaction({
             from: jettonMinter.address,
             to: deployerJettonWallet.address,
@@ -85,13 +91,13 @@ describe('JettonWallet', () => {
         initialTotalSupply += initialJettonBalance;
         // can mint from deployer again
         let additionalJettonBalance = toNano('2.31');
-        await jettonMinter.sendMint(deployer.getSender(), deployer.address, additionalJettonBalance, toNano('0.05'), toNano('1'));
+        await jettonMinter.sendMint(deployer.getSender(), deployer.address, additionalJettonBalance, toNano('0.05'), toNano('1'), jettonMinter.address);
         expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance + additionalJettonBalance);
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + additionalJettonBalance);
         initialTotalSupply += additionalJettonBalance;
         // can mint to other address
         let otherJettonBalance = toNano('3.12');
-        await jettonMinter.sendMint(deployer.getSender(), notDeployer.address, otherJettonBalance, toNano('0.05'), toNano('1'));
+        await jettonMinter.sendMint(deployer.getSender(), notDeployer.address, otherJettonBalance, toNano('0.05'), toNano('1'), jettonMinter.address);
         const notDeployerJettonWallet = await userWallet(notDeployer.address);
         expect(await notDeployerJettonWallet.getJettonBalance()).toEqual(otherJettonBalance);
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply + otherJettonBalance);
@@ -102,7 +108,7 @@ describe('JettonWallet', () => {
         let initialTotalSupply = await jettonMinter.getTotalSupply();
         const deployerJettonWallet = await userWallet(deployer.address);
         let initialJettonBalance = await deployerJettonWallet.getJettonBalance();
-        const unAuthMintResult = await jettonMinter.sendMint(notDeployer.getSender(), deployer.address, toNano('777'), toNano('0.05'), toNano('1'));
+        const unAuthMintResult = await jettonMinter.sendMint(notDeployer.getSender(), deployer.address, toNano('777'), toNano('0.05'), toNano('1'), jettonMinter.address);
 
         expect(unAuthMintResult.transactions).toHaveTransaction({
             from: notDeployer.address,
@@ -128,7 +134,7 @@ describe('JettonWallet', () => {
             from: notDeployer.address,
             to: jettonMinter.address,
             aborted: true,
-            exitCode: 76, // error::unauthorized_change_admin_request
+            exitCode: 73, // error::unauthorized_change_admin_request
         });
     });
 
@@ -148,7 +154,7 @@ describe('JettonWallet', () => {
             from: notDeployer.address,
             to: jettonMinter.address,
             aborted: true,
-            exitCode: 77, // error::unauthorized_change_content_request
+            exitCode: 73, // error::unauthorized_change_content_request
         });
     });
 
@@ -478,7 +484,7 @@ describe('JettonWallet', () => {
         let initialJettonBalance   = await deployerJettonWallet.getJettonBalance();
         let initialTotalSupply     = await jettonMinter.getTotalSupply();
         let burnAmount   = toNano('0.01');
-        let fwd_fee      = 1492012n /*1500012n*/, gas_consumption = 14000000n;
+        let fwd_fee      = 1492012n /*1500012n*/, gas_consumption = 15000000n;
         let minimalFee   = fwd_fee + 2n*gas_consumption;
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount

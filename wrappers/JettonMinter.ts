@@ -23,7 +23,9 @@ export function jettonContentToCell(content:JettonMinterContent) {
 }
 
 export class JettonMinter implements Contract {
-    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {}
+    constructor(readonly address: Address, readonly init?: { code: Cell; data: Cell }) {
+
+    }
 
     static createFromAddress(address: Address) {
         return new JettonMinter(address);
@@ -43,16 +45,25 @@ export class JettonMinter implements Contract {
         });
     }
 
-    static mintMessage(to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint,) {
+    static mintMessage(minterAddress: Address, to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint,) {
         return beginCell().storeUint(21, 32).storeUint(0, 64) // op, queryId
-            .storeAddress(to).storeCoins(jetton_amount)
-            .storeCoins(forward_ton_amount).storeCoins(total_ton_amount)
+            .storeAddress(to).storeCoins(forward_ton_amount)
+            .storeRef(beginCell()
+                .storeUint(0x178d4519, 32)
+                .storeUint(0, 64)
+                .storeCoins(jetton_amount)
+                .storeAddress(to)
+                .storeAddress(minterAddress)
+                .storeBit(0)
+                .storeCoins(0)
+                .storeBit(0)
+                .endCell())
             .endCell();
     }
-    async sendMint(provider: ContractProvider, via: Sender, to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint,) {
+    async sendMint(provider: ContractProvider, via: Sender, to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint, jettonMinter: Address) {
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: JettonMinter.mintMessage(to, jetton_amount, forward_ton_amount, total_ton_amount,),
+            body: JettonMinter.mintMessage(jettonMinter, to, jetton_amount, forward_ton_amount, total_ton_amount,),
             value: total_ton_amount + toNano("0.1"),
         });
     }

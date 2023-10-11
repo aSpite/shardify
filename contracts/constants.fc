@@ -7,6 +7,9 @@ const int op::excesses = 0xd53276db;
 const int op::burn = 0x595f07bc;
 const int op::burn_notification = 0x7bdd97de;
 
+const int op::provide_wallet_address = 0x2c76b973;
+const int op::take_wallet_address = 0xd1735400;
+
 ;; Minter OP Codes
 const int op::mint = 21;
 

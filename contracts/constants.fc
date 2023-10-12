@@ -1,16 +1,30 @@
-;; Jetton Wallet OP Codes
-
-const int op::transfer = 0xf8a7ea5;
+;; Jetton Wallet
+const int op::jetton_transfer = 0xf8a7ea5;
 const int op::transfer_notification = 0x7362d09c;
 const int op::internal_transfer = 0x178d4519;
 const int op::excesses = 0xd53276db;
 const int op::burn = 0x595f07bc;
 const int op::burn_notification = 0x7bdd97de;
 
+const int fee::wallet_comsumption = 15000000;
+const int fee::wallet_storage = 10000000;
+
+;; Minter
+const int op::mint = 21;
 const int op::provide_wallet_address = 0x2c76b973;
 const int op::take_wallet_address = 0xd1735400;
 
-;; Minter OP Codes
-const int op::mint = 21;
-
 const int workchain = 0;
+
+const int fee::provide_address = 10000000;
+
+;; NFT Item
+const int fee::nft_storage = 50000000;
+
+const int op::nft_transfer = 0x5fcc3d14;
+const int op::nft_ownership_assigned = 0x05138d91;
+const int op::nft_excesses = 0xd53276db;
+const int op::nft_get_static_data = 0x2fcb26a2;
+const int op::nft_report_static_data = 0x8b771735;
+const int op::nft_get_royalty_params = 0x693d3950;
+const int op::nft_report_royalty_params = 0xa8cb00ad;

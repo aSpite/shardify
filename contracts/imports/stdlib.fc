@@ -621,5 +621,7 @@ int get_seed() impure asm "RANDSEED";
 int equal_slice_bits(slice a, slice b) asm "SDEQ";
 int equal_slices(slice a, slice b) asm "SDEQ";
 
+int builder_null?(builder b) asm "ISNULL";
+
 ;;; Concatenates two builders
 builder store_builder(builder to, builder from) asm "STBR";

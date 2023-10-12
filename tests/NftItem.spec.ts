@@ -47,4 +47,17 @@ describe('NftItem', () => {
         expect(result.owner!.toString()).toStrictEqual(user.address.toString());
         expect(result.content!.hash()).toStrictEqual(contentHash);
     });
+
+    it('should transfer', async () => {
+        const transferResult = await nftItem.sendTransfer(
+            user.getSender(), toNano('0.05'), 0, deployer.address, user.address, toNano(0),
+        );
+        expect(transferResult.transactions).toHaveTransaction({
+            from: user.address,
+            to: nftItem.address,
+            success: true,
+        });
+        const result = await nftItem.getNftData();
+        expect(result.owner!.toString()).toStrictEqual(deployer.address.toString());
+    });
 });

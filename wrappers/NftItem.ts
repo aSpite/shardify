@@ -1,4 +1,14 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import {
+    Address,
+    beginCell,
+    Cell,
+    Contract,
+    contractAddress,
+    ContractProvider,
+    Sender,
+    SendMode,
+    toNano
+} from 'ton-core';
 
 export type NftItemConfig = {
     index: number,
@@ -36,6 +46,33 @@ export class NftItem implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().storeAddress(owner).storeRef(content).endCell(),
         });
+    }
+
+    async sendTransfer(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        queryID: number,
+        newOwner: Address,
+        responseAddress: Address,
+        forwardAmount: bigint,
+        forwardPayload?: Cell
+    ) {
+        let body = beginCell()
+            .storeUint(0x5fcc3d14, 32)
+            .storeUint(queryID, 64)
+            .storeAddress(newOwner)
+            .storeAddress(responseAddress)
+            .storeBit(0)
+            .storeCoins(forwardAmount)
+
+        body = forwardPayload ? body.storeBit(1).storeRef(forwardPayload) : body.storeBit(0);
+
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: body.endCell()
+        })
     }
 
     async getNftData(provider: ContractProvider) {

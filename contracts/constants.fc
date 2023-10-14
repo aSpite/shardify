@@ -6,21 +6,18 @@ const int op::excesses = 0xd53276db;
 const int op::burn = 0x595f07bc;
 const int op::burn_notification = 0x7bdd97de;
 
-const int fee::wallet_comsumption = 15000000;
-const int fee::wallet_storage = 10000000;
+const int fee::jetton_wallet_comsumption = 15000000;
+const int fee::jetton_wallet_storage = 10000000;
 
 ;; Minter
 const int op::mint = 21;
 const int op::provide_wallet_address = 0x2c76b973;
 const int op::take_wallet_address = 0xd1735400;
 
-const int workchain = 0;
-
+const int const::workchain = 0;
 const int fee::provide_address = 10000000;
 
 ;; NFT Item
-const int fee::nft_storage = 50000000;
-
 const int op::nft_transfer = 0x5fcc3d14;
 const int op::nft_ownership_assigned = 0x05138d91;
 const int op::nft_excesses = 0xd53276db;
@@ -28,3 +25,16 @@ const int op::nft_get_static_data = 0x2fcb26a2;
 const int op::nft_report_static_data = 0x8b771735;
 const int op::nft_get_royalty_params = 0x693d3950;
 const int op::nft_report_royalty_params = 0xa8cb00ad;
+
+const int fee::nft_storage = 50000000; ;; 0.05 TON
+
+;; NFT Holder
+const int op::return_nft = 1;
+
+const int error::unauthorized = 100;
+const int error::wrong_nft = 101;
+const int error::not_own = 102;
+const int error::not_nft_transfer = 103;
+
+const int flag::bounceable = 0x18;
+const int flag::non_bounceable = 0x10;

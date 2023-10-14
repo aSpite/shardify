@@ -1,5 +1,122 @@
 #include "imports/stdlib.fc";
+#include "constants.fc";
+#include "utils.fc";
+
+global slice storage::jetton_master_address;
+global slice storage::nft_address;
+global slice storage::last_taker_address;
+global cell storage::jetton_wallet_code;
+global int storage::parts_count;
+global int storage::index;
+global int storage::own_nft?;
+global int storage::parts_count;
+global int storage::init?;
+
+() load_data() impure {
+    slice ds = get_data().begin_parse();
+    storage::jetton_master_address = ds~load_msg_addr();
+    storage::index = ds~load_uint(64);
+    storage::init? = false;
+
+    if(slice_bits(ds) > 0 ) {
+        storage::init? = true;
+        storage::parts_count = ds~load_coins();
+        storage::nft_address = ds~load_msg_addr();
+        storage::own_nft? = ds~load_int(1);
+        storage::last_taker_address = ds~load_msg_addr();
+        storage::jetton_wallet_code = ds~load_ref();
+    }
+}
+
+() save_data() impure {
+    set_data(begin_cell()
+            ;; 1023 - 267 + 64 + 124 (max) + 267 + 1 + 267 = 33 bits
+            .store_slice(storage::jetton_master_address)
+            .store_uint(storage::index, 64)
+            .store_coins(storage::parts_count)
+            .store_slice(storage::nft_address)
+            .store_int(storage::own_nft?, 1)
+            .store_slice(storage::last_taker_address)
+            .store_ref(storage::jetton_wallet_code)
+            .end_cell()
+    );
+}
+
+slice zero_address() asm "b{00} PUSHSLICE";
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    load_data();
+    if (flags & 1) {
+        in_msg_body~skip_bits(32); ;; 0xFFFFFFFF
+        int op = in_msg_body~load_uint(32);
+        throw_unless(error::not_nft_transfer, (op == op::nft_transfer));
+        int query_id = in_msg_body~load_uint(64);
+        storage::own_nft? = true;
+        cell msg = begin_cell()
+            .store_uint(op::internal_transfer, 32)
+            .store_uint(query_id, 64)
+            .store_coins(storage::parts_count)
+            .store_slice(storage::last_taker_address)
+            .store_slice(zero_address())
+            .store_coins(0)
+            .store_uint(0, 1)
+            .end_cell();
+        storage::last_taker_address = zero_address();
 
+        send_raw_message(msg, 3);
+        return ();
+    }
+
+    slice sender = cs~load_msg_addr();
+    if(~ storage::init?) {
+        throw_unless(error::unauthorized, equal_slices(storage::jetton_master_address, sender));
+        storage::parts_count = in_msg_body~load_coins();
+        storage::nft_address = in_msg_body~load_msg_addr();
+        storage::own_nft? = 0;
+        storage::last_taker_address = zero_address();
+        storage::jetton_wallet_code = in_msg_body~load_ref();
+        in_msg_body.end_parse();
+        save_data();
+        return();
+    }
+
+;;    () on_bounce (slice in_msg_body) impure {
+;;        in_msg_body~skip_bits(32); ;; 0xFFFFFFFF
+;;        (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+;;        int op = in_msg_body~load_uint(32);
+;;        throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification));
+;;        int query_id = in_msg_body~load_uint(64);
+;;        int jetton_amount = in_msg_body~load_coins();
+;;        balance += jetton_amount;
+;;        save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
+;;    }
+
+    int op = in_msg_body~load_uint(32);
+    int query_id = in_msg_body~load_uint(64);
+    if(op == op::return_nft) {
+        int jetton_amount = in_msg_body~load_coins();
+        slice taker_address = in_msg_body~load_msg_addr();
+        throw_unless(error::unauthorized,
+            equal_slices(calculate_user_jetton_wallet_address(taker_address, storage::jetton_master_address, storage::jetton_wallet_code), sender)
+        );
+        slice nft_address = in_msg_body~load_msg_addr();
+        throw_unless(error::wrong_nft, equal_slices(nft_address, storage::nft_address));
+        throw_unless(error::not_own, storage::own_nft? == -1);
+        storage::own_nft? = 0;
+        storage::last_taker_address = taker_address;
+        save_data();
+        send_raw_message(begin_cell()
+            .store_uint(flag::bounceable, 6)
+                .store_slice(storage::nft_address)
+                .store_coins(100000000) ;; 0.1 TON for cases where there are not enough funds on the contract to pay storage fee
+                .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .store_ref(get_nft_transfer_body(
+            query_id, taker_address, my_address(), 0, null())
+                )
+                .end_cell()
+        , 1); ;; pay fees separately, revert on errors
+        return();
+    }
 }

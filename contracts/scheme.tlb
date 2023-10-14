@@ -1,0 +1,2 @@
+// NFT Holder
+return_nft query_id:uint64 taker_address:MsgAddressInt nft_address:MsgAddressInt = InternalMsgBody;

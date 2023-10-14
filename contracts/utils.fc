@@ -21,7 +21,7 @@ cell calculate_jetton_wallet_state_init(slice owner_address, slice jetton_master
 
 slice calculate_jetton_wallet_address(cell state_init) inline {
     return begin_cell().store_uint(4, 3)
-    .store_int(workchain, 8)
+    .store_int(const::workchain, 8)
     .store_uint(cell_hash(state_init), 256)
     .end_cell()
     .begin_parse();
@@ -33,12 +33,27 @@ slice calculate_user_jetton_wallet_address(slice owner_address, slice jetton_mas
 
 () force_chain(slice addr) impure {
     (int wc, _) = parse_std_addr(addr);
-    throw_unless(333, wc == workchain);
+    throw_unless(333, wc == const::workchain);
 }
-
 
 int is_resolvable?(slice addr) inline {
     (int wc, _) = parse_std_addr(addr);
 
-    return wc == workchain;
+    return wc == const::workchain;
+}
+
+cell get_nft_transfer_body(int query_id, slice destAddr, slice respAddr, int fwdAmount, cell fwdCell) inline {
+    builder body = begin_cell()
+        .store_uint(op::nft_transfer, 32)
+        .store_uint(query_id, 64)
+        .store_slice(destAddr)
+        .store_slice(respAddr)
+        .store_uint(0, 1)
+        .store_coins(fwdAmount);
+
+    if(null?(fwdCell)) {
+        return body.store_uint(0, 1).end_cell();
+    } else {
+        return body.store_uint(1, 1).store_ref(fwdCell).end_cell();
+    }
 }

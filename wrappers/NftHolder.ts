@@ -1,9 +1,15 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
 
-export type NftHolderConfig = {};
+export type NftHolderConfig = {
+    jettonMasterAddress: Address,
+    index: number
+};
 
 export function nftHolderConfigToCell(config: NftHolderConfig): Cell {
-    return beginCell().endCell();
+    return beginCell()
+        .storeAddress(config.jettonMasterAddress)
+        .storeUint(config.index, 64)
+        .endCell();
 }
 
 export class NftHolder implements Contract {
@@ -19,11 +25,22 @@ export class NftHolder implements Contract {
         return new NftHolder(contractAddress(workchain, init), init);
     }
 
-    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+    async sendDeploy(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        partsCount: bigint,
+        nftAddress: Address,
+        jettonWalletCode: Cell
+    ) {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
+                body: beginCell()
+                    .storeCoins(partsCount)
+                    .storeAddress(nftAddress)
+                    .storeRef(jettonWalletCode)
+                .endCell(),
         });
     }
 }

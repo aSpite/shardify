@@ -30,6 +30,7 @@ const int fee::nft_storage = 50000000; ;; 0.05 TON
 
 ;; NFT Holder
 const int op::return_nft = 1;
+const int op::return_fail = 2;
 
 const int error::unauthorized = 100;
 const int error::wrong_nft = 101;

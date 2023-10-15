@@ -2,13 +2,20 @@ import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, 
 
 export type NftHolderConfig = {
     jettonMasterAddress: Address,
-    index: number
+    nftAddress: Address
+};
+
+type NftHolderData = {
+    jettonMasterAddress: Address,
+    nftAddress: Address,
+    partsCount: bigint,
+    ownNft: boolean
 };
 
 export function nftHolderConfigToCell(config: NftHolderConfig): Cell {
     return beginCell()
         .storeAddress(config.jettonMasterAddress)
-        .storeUint(config.index, 64)
+        .storeAddress(config.nftAddress)
         .endCell();
 }
 
@@ -38,9 +45,18 @@ export class NftHolder implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
                 body: beginCell()
                     .storeCoins(partsCount)
-                    .storeAddress(nftAddress)
                     .storeRef(jettonWalletCode)
                 .endCell(),
         });
+    }
+
+    async getHolderData(provider: ContractProvider) : Promise<NftHolderData> {
+        const result = await provider.get('get_holder_data', []);
+        return {
+            jettonMasterAddress: result.stack.readAddress(),
+            nftAddress: result.stack.readAddress(),
+            partsCount: result.stack.readBigNumber(),
+            ownNft: result.stack.readBoolean(),
+        }
     }
 }

@@ -244,6 +244,8 @@ This is suitable for most tokens, if you need tokens transferable between workch
         return ();
     }
 
+    ;; TODO: Add return fail opcode
+
     throw(0xffff);
 }
 

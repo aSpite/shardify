@@ -37,14 +37,14 @@ describe('NftHolder', () => {
                 await compile('JettonMinter')));
 
         nftHolder = blockchain.openContract(NftHolder.createFromConfig({
-            jettonMasterAddress: masterTreasury.address,
-            index: 0
+            jettonMasterAddress: masterTreasury.address, // treasury address for tests
+            nftAddress: nftTreasury.address
         }, code));
 
         const deployResult = await nftHolder.sendDeploy(
             masterTreasury.getSender(), toNano('0.05'), 50n, nftTreasury.address, Cell.EMPTY
             );
-        // console.log(deployResult.transactions[2])
+
         expect(deployResult.transactions).toHaveTransaction({
             from: masterTreasury.address,
             to: nftHolder.address,
@@ -54,7 +54,11 @@ describe('NftHolder', () => {
     });
 
     it('should deploy', async () => {
-        // the check is done inside beforeEach
-        // blockchain and nftHolder are ready to use
+        const result = await nftHolder.getHolderData();
+        expect(result.jettonMasterAddress.toString()).toStrictEqual(masterTreasury.address.toString());
+        expect(result.nftAddress.toString()).toStrictEqual(nftTreasury.address.toString());
+        expect(result.partsCount).toStrictEqual(50n);
+        expect(result.ownNft).toStrictEqual(false);
     });
+
 });

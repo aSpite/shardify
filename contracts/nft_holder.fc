@@ -40,7 +40,7 @@ global int storage::init?;
 
 slice zero_address() asm "b{00} PUSHSLICE";
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(cell in_msg_full, slice in_msg_body) impure {
     slice cs = in_msg_full.begin_parse();
     int flags = cs~load_uint(4);
     load_data();
@@ -105,9 +105,9 @@ slice zero_address() asm "b{00} PUSHSLICE";
 
     if(op == op::return_nft) {
         int jetton_amount = in_msg_body~load_coins();
-        storage::last_taker_address = in_msg_body~load_msg_addr();
         slice nft_address = in_msg_body~load_msg_addr();
         slice wallet_owner_address = in_msg_body~load_msg_addr();
+        storage::last_taker_address = sender;
         throw_unless(error::unauthorized,
             equal_slices(calculate_user_jetton_wallet_address(wallet_owner_address, storage::jetton_master_address, storage::jetton_wallet_code), sender)
         );
@@ -145,16 +145,22 @@ slice zero_address() asm "b{00} PUSHSLICE";
     }
 }
 
-(slice, slice, int, int) get_holder_data() method_id {
+(slice, slice, slice, int, int) get_holder_data() method_id {
     load_data();
     if(~ storage::init?) {
-        return (zero_address(), zero_address(), -1, 0);
+        return (zero_address(), zero_address(), zero_address(), -1, 0);
     }
 
     return (
         storage::jetton_master_address,
         storage::nft_address,
+        storage::last_taker_address,
         storage::parts_count,
         storage::own_nft?
     );
+}
+
+(cell) get_jetton_wallet_code() method_id {
+    load_data();
+    return storage::jetton_wallet_code;
 }

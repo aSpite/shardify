@@ -1,4 +1,5 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import {OPCODES} from "../config";
 
 export type NftHolderConfig = {
     jettonMasterAddress: Address,
@@ -8,6 +9,7 @@ export type NftHolderConfig = {
 type NftHolderData = {
     jettonMasterAddress: Address,
     nftAddress: Address,
+    lastTakerAddress: Address | null,
     partsCount: bigint,
     ownNft: boolean
 };
@@ -50,13 +52,41 @@ export class NftHolder implements Contract {
         });
     }
 
+    async sendReturnNFT(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        queryID: number,
+        jettonAmount: bigint,
+        nftAddress: Address,
+        walletOwner: Address,
+    ) {
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(OPCODES.HOLDER_RETURN, 32)
+                .storeUint(queryID, 64)
+                .storeCoins(jettonAmount)
+                .storeAddress(nftAddress)
+                .storeAddress(walletOwner)
+                .endCell(),
+        });
+    }
+
     async getHolderData(provider: ContractProvider) : Promise<NftHolderData> {
         const result = await provider.get('get_holder_data', []);
         return {
             jettonMasterAddress: result.stack.readAddress(),
             nftAddress: result.stack.readAddress(),
+            lastTakerAddress: result.stack.readAddressOpt(),
             partsCount: result.stack.readBigNumber(),
             ownNft: result.stack.readBoolean(),
         }
+    }
+
+    async getJettonWalletCode(provider: ContractProvider): Promise<Cell> {
+        const result = await provider.get('get_jetton_wallet_code', []);
+        return result.stack.readCell();
     }
 }

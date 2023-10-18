@@ -1,0 +1,14 @@
+export const OPCODES = {
+    NFT_TRANSFER: 0x5fcc3d14,
+    NFT_OWNERSHIP_ASSIGNED: 0x05138d91,
+    NFT_EXCESSES: 0xd53276db,
+
+    HOLDER_RETURN: 0x1
+}
+
+export const ERRORS = {
+    UNAUTHORIZED: 100,
+    WRONG_NFT: 101,
+    NOT_OWN: 102,
+    NOT_NFT_TRANSFER: 103
+}

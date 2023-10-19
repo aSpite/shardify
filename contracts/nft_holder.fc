@@ -118,10 +118,11 @@ slice zero_address() asm "b{00} PUSHSLICE";
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(storage::nft_address)
+            ;; TODO: Check this
             .store_coins(100000000) ;; 0.1 TON for cases where there are not enough funds on the contract to pay storage fee
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(get_nft_transfer_body(
-            query_id, storage::last_taker_address, my_address(), 0, null())
+            query_id, wallet_owner_address, my_address(), 0, null())
                 )
                 .end_cell()
         , 1); ;; pay fees separately, revert on errors
@@ -142,6 +143,22 @@ slice zero_address() asm "b{00} PUSHSLICE";
         storage::last_taker_address = zero_address();
         save_data();
         return();
+    }
+
+    if(op == op::repeat_return) {
+        throw_unless(error::unauthorized, equal_slices(sender, storage::last_taker_address));
+        slice owner_address = in_msg_body~load_msg_addr();
+        send_raw_message(begin_cell()
+            ;; TODO: bounceable?
+            .store_uint(flag::bounceable, 6)
+            .store_slice(storage::nft_address)
+            .store_coins(0)
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_ref(get_nft_transfer_body(
+                query_id, owner_address, my_address(), 0, null())
+            )
+            .end_cell()
+            , 64); ;; pay fees separately, revert on errors
     }
 }
 

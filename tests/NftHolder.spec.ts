@@ -156,6 +156,8 @@ describe('NftHolder', () => {
         const data = await nftHolder.getHolderData();
         expect(data.ownNft).toBeFalsy();
         expect(data.lastTakerAddress).toBeNull();
+        const nftData = await nft.getNftData();
+        expect(nftData.owner!.toString()).toStrictEqual(deployer.address.toString());
     });
 
     it('error: not own', async () => {
@@ -213,5 +215,48 @@ describe('NftHolder', () => {
         const data = await nftHolder.getHolderData();
         expect(data.ownNft).toBeFalsy();
         expect(data.lastTakerAddress!.toString()).toStrictEqual(deployerJettonWallet.toString());
+    });
+
+    it('successful repeat after fail', async () => {
+        (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
+        (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
+        let returnNft = await sendReturnNft(
+            deployerJettonWallet, toNano('0.05'), nft.address);
+        expect(returnNft.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: false,
+            inMessageBounced: true,
+            exitCode: 0,
+            actionResultCode: 34
+        });
+        let nftData = await nft.getNftData();
+        expect(nftData.owner!.toString()).toStrictEqual(deployer.address.toString());
+
+        (await blockchain.getContract(nft.address)).loadFrom(nftAfterSent);
+        returnNft = await blockchain.sendMessage(
+            internal({
+                from: deployerJettonWallet,
+                to: nftHolder.address,
+                value: toNano('0.1'),
+                body: beginCell()
+                    .storeUint(OPCODES.HOLDER_REPEAT_RETURN, 32)
+                    .storeUint(0, 64)
+                    .storeAddress(deployer.address)
+                    .endCell()
+            })
+        );
+        (await blockchain.getContract(nft.address)).loadFrom(nftAfterSent);
+
+        expect(returnNft.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.NFT_EXCESSES
+        });
+
+        let data = await nftHolder.getHolderData();
+        expect(data.ownNft).toBeFalsy();
+        expect(data.lastTakerAddress).toBeNull();
     });
 });

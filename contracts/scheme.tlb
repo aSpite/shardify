@@ -1,2 +1,10 @@
 // NFT Holder
-return_nft query_id:uint64 taker_address:MsgAddressInt nft_address:MsgAddressInt = InternalMsgBody;
+_ jetton_master_address:MsgAddressInt nft_address:MsgAddressInt own_nft:Bool
+  last_taker_address:MsgAddressInt jetton_wallet_code:^Cell = NftHolderStorage;
+
+return_nft#1a3fdbcf query_id:uint64 jetton_amount:Coins nft_address:MsgAddressInt
+  wallet_owner_address:MsgAddressInt = InternalMsgBody; // 9a3fdbcf & 0x7fffffff = 0x1a3fdbcf
+repeat_return#6855e245 query_id:uint64 owner_address:MsgAddressInt =
+  InternalMsgBody; // 0x6855e245 & 0x7fffffff = 6855e245
+return_fail#bd017ec7 query_id:uint64 nft_address:MsgAddressInt =
+  InternalMsgBody; // 0x3d017ec7 | 0x80000000 = 0xbd017ec7

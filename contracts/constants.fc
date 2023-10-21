@@ -29,9 +29,9 @@ const int op::nft_report_royalty_params = 0xa8cb00ad;
 const int fee::nft_storage = 50000000; ;; 0.05 TON
 
 ;; NFT Holder
-const int op::return_nft = 1;
-const int op::return_fail = 2;
-const int op::repeat_return = 3;
+const int op::return_nft = 0x1a3fdbcf;
+const int op::return_fail = 0xbd017ec7;
+const int op::repeat_return = 0x6855e245;
 
 const int error::unauthorized = 100;
 const int error::wrong_nft = 101;

@@ -53,7 +53,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
         cell msg_body = begin_cell()
             .store_uint(op::return_fail, 32)
             .store_uint(query_id, 64)
-            .store_coins(storage::parts_count)
+            .store_slice(storage::nft_address)
             .end_cell();
         storage::last_taker_address = zero_address();
 
@@ -90,7 +90,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
             send_raw_message(begin_cell()
                 .store_uint(flag::non_bounceable, 6)
                 .store_slice(storage::nft_address)
-                .store_coins(0) ;; 0.02 TON
+                .store_coins(0)
                 .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .store_ref(get_nft_transfer_body(
                     query_id, prev_owner, prev_owner, 0, null())
@@ -107,6 +107,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
         int jetton_amount = in_msg_body~load_coins();
         slice nft_address = in_msg_body~load_msg_addr();
         slice wallet_owner_address = in_msg_body~load_msg_addr();
+        in_msg_body.end_parse();
         storage::last_taker_address = sender;
         throw_unless(error::unauthorized,
             equal_slices(calculate_user_jetton_wallet_address(wallet_owner_address, storage::jetton_master_address, storage::jetton_wallet_code), sender)
@@ -118,8 +119,9 @@ slice zero_address() asm "b{00} PUSHSLICE";
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(storage::nft_address)
-            ;; TODO: Check this
-            .store_coins(100000000) ;; 0.1 TON for cases where there are not enough funds on the contract to pay storage fee
+            ;; 0.3 TON for cases where there are not enough funds on the contract to pay storage fee
+            ;; this value also consider NFTs with onchain metadata
+            .store_coins(300000000)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(get_nft_transfer_body(
             query_id, wallet_owner_address, my_address(), 0, null())
@@ -148,9 +150,9 @@ slice zero_address() asm "b{00} PUSHSLICE";
     if(op == op::repeat_return) {
         throw_unless(error::unauthorized, equal_slices(sender, storage::last_taker_address));
         slice owner_address = in_msg_body~load_msg_addr();
+        in_msg_body.end_parse();
         send_raw_message(begin_cell()
-            ;; TODO: bounceable?
-            .store_uint(flag::bounceable, 6)
+            .store_uint(flag::non_bounceable, 6)
             .store_slice(storage::nft_address)
             .store_coins(0)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)

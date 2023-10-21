@@ -134,7 +134,7 @@ describe('NftHolder', () => {
         (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
         (await blockchain.getContract(nft.address)).loadFrom(nftAfterSent);
         let returnNft = await sendReturnNft(
-            deployerJettonWallet, toNano('0.1'), nft.address);
+            deployerJettonWallet, toNano('0.3'), nft.address);
         expect(returnNft.transactions).toHaveTransaction({
             from: nftHolder.address,
             to: nft.address,
@@ -202,7 +202,7 @@ describe('NftHolder', () => {
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
         let returnNft = await sendReturnNft(
-            deployerJettonWallet, toNano('0.05'), nft.address);
+            deployerJettonWallet, toNano('0.25'), nft.address);
         expect(returnNft.transactions).toHaveTransaction({
             from: nft.address,
             to: nftHolder.address,
@@ -221,7 +221,7 @@ describe('NftHolder', () => {
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
         let returnNft = await sendReturnNft(
-            deployerJettonWallet, toNano('0.05'), nft.address);
+            deployerJettonWallet, toNano('0.25'), nft.address);
         expect(returnNft.transactions).toHaveTransaction({
             from: nft.address,
             to: nftHolder.address,

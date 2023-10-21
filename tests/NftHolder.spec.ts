@@ -1,6 +1,6 @@
 import {
     Blockchain,
-    internal,
+    internal, printTransactionFees,
     SandboxContract,
     SmartContractSnapshot,
     TreasuryContract
@@ -258,5 +258,59 @@ describe('NftHolder', () => {
         let data = await nftHolder.getHolderData();
         expect(data.ownNft).toBeFalsy();
         expect(data.lastTakerAddress).toBeNull();
+    });
+
+    it('should be reusable', async () => {
+        (await blockchain.getContract(nft.address)).loadFrom(nftAfterSent);
+        (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
+        let returnNft = await sendReturnNft(
+            deployerJettonWallet, toNano('0.3'), nft.address);
+        expect(returnNft.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.NFT_EXCESSES
+        });
+        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(0n);
+        let data = await nftHolder.getHolderData();
+        expect(data.ownNft).toBeFalsy();
+        expect(data.lastTakerAddress).toBeNull();
+
+        const nftTransfer = await nft.sendTransfer(
+            deployer.getSender(), toNano('0.05'), 0, nftHolder.address,
+            deployer.address, toNano(0.01), undefined
+        );
+        expect(nftTransfer.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.NFT_OWNERSHIP_ASSIGNED
+        });
+        data = await nftHolder.getHolderData();
+        expect(data.ownNft).toBeTruthy();
+
+        // 0.31 TON, because in second time contract have a little balance
+        // since contract will be used only by jetton wallet, it will handle all fees
+        // so, we can do not care about it in these tests
+        returnNft = await sendReturnNft(
+            deployerJettonWallet, toNano('0.31'), nft.address);
+        expect(returnNft.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.NFT_EXCESSES
+        });
+        expect(returnNft.transactions).toHaveTransaction({
+            from: nftHolder.address,
+            to: deployerJettonWallet,
+            success: false,
+            op: OPCODES.NFT_EXCESSES
+        });
+        data = await nftHolder.getHolderData();
+        expect(data.ownNft).toBeFalsy();
+        expect(data.lastTakerAddress).toBeNull();
+
+        let nftData = await nft.getNftData();
+        expect(nftData.owner!.toString()).toStrictEqual(deployer.address.toString());
     });
 });

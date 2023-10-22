@@ -1,20 +1,23 @@
 #include "imports/stdlib.fc";
 #include "constants.fc";
 
-cell pack_jetton_wallet_data(int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) inline {
+cell pack_jetton_wallet_data(int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) inline {
     return  begin_cell()
     .store_coins(balance)
     .store_slice(owner_address)
     .store_slice(jetton_master_address)
     .store_ref(jetton_wallet_code)
+    .store_coins(parts_count)
+    .store_ref(nft_holder_code)
     .end_cell();
 }
 
-cell calculate_jetton_wallet_state_init(slice owner_address, slice jetton_master_address, cell jetton_wallet_code) inline {
+cell calculate_jetton_wallet_state_init(slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) inline {
     return begin_cell()
     .store_uint(0, 2)
     .store_dict(jetton_wallet_code)
-    .store_dict(pack_jetton_wallet_data(0, owner_address, jetton_master_address, jetton_wallet_code))
+    .store_dict(pack_jetton_wallet_data(0, owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code))
     .store_uint(0, 1)
     .end_cell();
 }
@@ -27,8 +30,9 @@ slice calculate_jetton_wallet_address(cell state_init) inline {
     .begin_parse();
 }
 
-slice calculate_user_jetton_wallet_address(slice owner_address, slice jetton_master_address, cell jetton_wallet_code) inline {
-    return calculate_jetton_wallet_address(calculate_jetton_wallet_state_init(owner_address, jetton_master_address, jetton_wallet_code));
+slice calculate_user_jetton_wallet_address(slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) inline {
+    return calculate_jetton_wallet_address(calculate_jetton_wallet_state_init(owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code));
 }
 
 () force_chain(slice addr) impure {
@@ -56,4 +60,10 @@ cell get_nft_transfer_body(int query_id, slice destAddr, slice respAddr, int fwd
     } else {
         return body.store_uint(1, 1).store_ref(fwdCell).end_cell();
     }
+}
+
+(int, cell, int, slice, slice) unpack_frac_data(cell data) inline {
+    slice ds = data.begin_parse();
+    (int parts_count, cell nft_holder_code, int public_key, slice collection_address, slice creator_address) = (ds~load_coins(), ds~load_ref(), ds~load_uint(256), ds~load_msg_addr(), ds~load_msg_addr());
+    return (parts_count, nft_holder_code, public_key, collection_address, creator_address);
 }

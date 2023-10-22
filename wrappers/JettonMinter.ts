@@ -4,7 +4,18 @@ export type JettonMinterContent = {
     type:0|1,
     uri:string
 };
-export type JettonMinterConfig = {admin: Address; content: Cell; wallet_code: Cell};
+export type JettonMinterConfig = {
+    admin: Address;
+    content: Cell;
+    wallet_code: Cell;
+    fracData: {
+        partsCount: bigint;
+        nftHolderCode: Cell;
+        publicKey: bigint;
+        collectionAddress: Address;
+        creatorAddress: Address;
+    }
+};
 
 export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
     return beginCell()
@@ -12,6 +23,14 @@ export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
         .storeAddress(config.admin)
         .storeRef(config.content)
         .storeRef(config.wallet_code)
+        .storeRef(beginCell()
+            .storeCoins(config.fracData.partsCount)
+            .storeRef(config.fracData.nftHolderCode)
+            .storeUint(config.fracData.publicKey, 256)
+            .storeAddress(config.fracData.collectionAddress)
+            .storeAddress(config.fracData.creatorAddress)
+            .endCell()
+        )
         .endCell();
 }
 

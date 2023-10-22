@@ -29,13 +29,14 @@ This is suitable for most tokens, if you need tokens transferable between workch
   storage#_ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt jetton_wallet_code:^Cell = Storage;
 -}
 
-(int, slice, slice, cell) load_data() inline {
+(int, slice, slice, cell, int, cell) load_data() inline {
     slice ds = get_data().begin_parse();
-    return (ds~load_coins(), ds~load_msg_addr(), ds~load_msg_addr(), ds~load_ref());
+    return (ds~load_coins(), ds~load_msg_addr(), ds~load_msg_addr(), ds~load_ref(), ds~load_coins(), ds~load_ref());
 }
 
-() save_data (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) impure inline {
-    set_data(pack_jetton_wallet_data(balance, owner_address, jetton_master_address, jetton_wallet_code));
+() save_data (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) impure inline {
+    set_data(pack_jetton_wallet_data(balance, owner_address,
+        jetton_master_address, jetton_wallet_code, parts_count, nft_holder_code));
 }
 
 {-
@@ -55,13 +56,14 @@ This is suitable for most tokens, if you need tokens transferable between workch
     int jetton_amount = in_msg_body~load_coins();
     slice to_owner_address = in_msg_body~load_msg_addr();
     force_chain(to_owner_address);
-    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
     balance -= jetton_amount;
 
     throw_unless(705, equal_slices(owner_address, sender_address));
     throw_unless(706, balance >= 0);
 
-    cell state_init = calculate_jetton_wallet_state_init(to_owner_address, jetton_master_address, jetton_wallet_code);
+    cell state_init = calculate_jetton_wallet_state_init(to_owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code);
     slice to_wallet_address = calculate_jetton_wallet_address(state_init);
     slice response_address = in_msg_body~load_msg_addr();
     cell custom_payload = in_msg_body~load_dict();
@@ -97,7 +99,7 @@ This is suitable for most tokens, if you need tokens transferable between workch
     ;; msg_fwd_fee(to_wallet, msg_body, state_init, 15)
 
     send_raw_message(msg.end_cell(), 64); ;; revert on errors
-    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
+    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code, parts_count, nft_holder_code);
 }
 
 {-
@@ -111,7 +113,7 @@ This is suitable for most tokens, if you need tokens transferable between workch
 () receive_tokens (slice in_msg_body, slice sender_address, int my_ton_balance, int fwd_fee, int msg_value) impure {
     ;; NOTE we can not allow fails in action phase since in that case there will be
     ;; no bounce. Thus check and throw in computation phase.
-    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     balance += jetton_amount;
@@ -120,7 +122,8 @@ This is suitable for most tokens, if you need tokens transferable between workch
     throw_unless(707,
         equal_slices(jetton_master_address, sender_address)
         |
-        equal_slices(calculate_user_jetton_wallet_address(from_address, jetton_master_address, jetton_wallet_code), sender_address)
+        equal_slices(calculate_user_jetton_wallet_address(from_address, jetton_master_address,
+            jetton_wallet_code, parts_count, nft_holder_code), sender_address)
     );
     int forward_ton_amount = in_msg_body~load_coins();
 
@@ -160,13 +163,13 @@ This is suitable for most tokens, if you need tokens transferable between workch
         send_raw_message(msg.end_cell(), 2);
     }
 
-    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
+    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code, parts_count, nft_holder_code);
 }
 
 () burn_tokens (slice in_msg_body, slice sender_address, int msg_value, int fwd_fee) impure {
     ;; NOTE we can not allow fails in action phase since in that case there will be
     ;; no bounce. Thus check and throw in computation phase.
-    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     slice response_address = in_msg_body~load_msg_addr();
@@ -194,19 +197,21 @@ This is suitable for most tokens, if you need tokens transferable between workch
 
     send_raw_message(msg.end_cell(), 64);
 
-    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
+    save_data(balance, owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code);
 }
 
 () on_bounce (slice in_msg_body) impure {
     in_msg_body~skip_bits(32); ;; 0xFFFFFFFF
-    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
     int op = in_msg_body~load_uint(32);
     ;; TODO: Add return_nft opcode
     throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification));
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     balance += jetton_amount;
-    save_data(balance, owner_address, jetton_master_address, jetton_wallet_code);
+    save_data(balance, owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code);
 }
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
@@ -250,5 +255,6 @@ This is suitable for most tokens, if you need tokens transferable between workch
 }
 
 (int, slice, slice, cell) get_wallet_data() method_id {
-    return load_data();
+    (int balance, slice owner, slice master, cell my_code, _, _) = load_data();
+    return (balance, owner, master, my_code);
 }

@@ -44,11 +44,19 @@ describe('JettonWallet', () => {
         notDeployer    = await blockchain.treasury('notDeployer');
         defaultContent = beginCell().endCell();
         jettonMinter   = blockchain.openContract(
-            await JettonMinter.createFromConfig(
+            JettonMinter.createFromConfig(
                 {
                     admin: deployer.address,
                     content: defaultContent,
                     wallet_code: jwallet_code,
+                    fracData: {
+                        partsCount: 1000n,
+                        // TODO: Change this
+                        nftHolderCode: Cell.EMPTY,
+                        publicKey: 0n,
+                        collectionAddress: randomAddress(),
+                        creatorAddress: randomAddress()
+                    }
                 },
                 minter_code));
         userWallet = async (address:Address) => blockchain.openContract(

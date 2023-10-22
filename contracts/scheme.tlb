@@ -8,3 +8,13 @@ repeat_return#6855e245 query_id:uint64 owner_address:MsgAddressInt =
   InternalMsgBody; // 0x6855e245 & 0x7fffffff = 6855e245
 return_fail#bd017ec7 query_id:uint64 nft_address:MsgAddressInt =
   InternalMsgBody; // 0x3d017ec7 | 0x80000000 = 0xbd017ec7
+
+// Jetton Minter
+frac_data$_ parts_count:Coins nft_holder_dara:^Cell public_key:uint256 collection_address:MsgAddressInt
+  creator_address:MsgAddressInt = FracData;
+_ balance:Coins owner_address:MsgAddressInt content:^Cell
+  jetton_wallet_code:^Cell frac_data:^FracData = JettonMinterStorage;
+
+// Jetton Wallet
+_ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt
+  jetton_wallet_code:^Cell parts_count:Coins nft_holder_code:^Cell = JettonWalletStorage;

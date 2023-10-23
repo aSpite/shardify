@@ -161,6 +161,7 @@
     }
 
     if (op == op::nft_ownership_assigned) {
+        ;; TODO: Handle fees
         slice prev_owner = in_msg_body~load_msg_addr();
         in_msg_body~skip_bits(1); ;; Either Cell ^Cell
         in_msg_body = in_msg_body.preload_ref().begin_parse();

@@ -38,7 +38,7 @@
 () return_nft(slice nft_address, int query_id, slice dest) impure inline {
     cell body = get_nft_transfer_body(query_id, dest, dest, 0, null());
     send_raw_message(begin_cell()
-        .store_uint(flag::non_bounceable, 4)
+        .store_uint(flag::non_bounceable, 6)
         .store_slice(nft_address)
         .store_coins(0)
         .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
@@ -180,13 +180,14 @@
             return ();
         }
         int frac_price = payload~load_coins();
-        if (msg_value > (frac_price + fee::fractionalization)) {
+        if (msg_value < (frac_price + fee::fractionalization)) {
             return_nft(sender_address, query_id, prev_owner);
             return ();
         }
 
         int creator_fee_numerator = payload~load_uint(8);
-        int creator_part = div_floor(frac_price, creator_fee_numerator) * 100;
+        int creator_part = frac_price * creator_fee_numerator / 100;
+        ;; TODO: Do not send if 0
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(creator_address)
@@ -194,7 +195,7 @@
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(op::fractionalization_fee, 32)
             .store_uint(query_id, 64)
-            .end_cell(), 0);
+            .end_cell(), 1);
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(admin_address)
@@ -202,7 +203,7 @@
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(op::fractionalization_fee, 32)
             .store_uint(query_id, 64)
-            .end_cell(), 0);
+            .end_cell(), 1);
 
         cell holder_state_init = calculate_holder_state_init(my_address(), sender_address, nft_holder_code);
         cell holder_body = begin_cell()
@@ -214,27 +215,42 @@
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(holder_address)
-            .store_coins(100000000) ;; 0.1 TON
+            .store_coins(500000000) ;; 0.5 TON
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1)
             .store_uint(1, 1)
             .store_ref(holder_state_init)
             .store_uint(1, 1)
             .store_ref(holder_body)
-            .end_cell(), 0);
+            .end_cell(), 1);
 
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(sender_address)
             .store_coins(50000000) ;; 0.05 TON
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_ref(get_nft_transfer_body(query_id, holder_address, sender_address, 20000000, null()))
-            .end_cell(), 0);
+            .store_ref(get_nft_transfer_body(query_id, holder_address, prev_owner, 20000000, null()))
+            .end_cell(), 1);
+
+        cell master_msg = begin_cell()
+            .store_uint(op::internal_transfer, 32)
+            .store_uint(query_id, 64)
+            .store_coins(parts_count)
+            .store_slice(my_address())
+            .store_slice(prev_owner)
+            .store_uint(0, 1)
+            .store_coins(1)
+            .store_uint(0, 1)
+            .end_cell();
+        mint_tokens(prev_owner, jetton_wallet_code, 50000000, master_msg, parts_count, nft_holder_code);
+        save_data(total_supply + parts_count, admin_address, content, jetton_wallet_code, frac_data);
+
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(prev_owner)
-            .store_coins(0)
+        ;; TODO: Should be changed
+            .store_coins(50000000) ;; 0.05 TON
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .end_cell(), 64);
+            .end_cell(), 1);
         return ();
     }
 

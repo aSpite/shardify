@@ -1,9 +1,30 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, toNano } from 'ton-core';
 
-export type JettonWalletConfig = {};
+export type JettonWalletConfig = {
+    balance: 0n,
+    ownerAddress: Address,
+    jettonMasterAddress: Address,
+    jettonWalletCode: Cell,
+    partsCount: bigint,
+    holderCode: Cell
+};
+
+export type JettonData = {
+    balance: bigint,
+    ownerAddress: Address,
+    masterAddress: Address,
+    jettonWalletCode: Cell
+};
 
 export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
-    return beginCell().endCell();
+    return beginCell()
+        .storeCoins(config.balance)
+        .storeAddress(config.ownerAddress)
+        .storeAddress(config.jettonMasterAddress)
+        .storeRef(config.jettonWalletCode)
+        .storeCoins(config.partsCount)
+        .storeRef(config.holderCode)
+        .endCell();
 }
 
 export class JettonWallet implements Contract {
@@ -85,6 +106,15 @@ export class JettonWallet implements Contract {
             body: JettonWallet.burnMessage(jetton_amount, responseAddress, customPayload),
             value:value
         });
+    }
 
+    async getWalletData(provider: ContractProvider): Promise<JettonData> {
+        const result = await provider.get('get_wallet_data', []);
+        return {
+            balance: result.stack.readBigNumber(),
+            ownerAddress: result.stack.readAddress(),
+            masterAddress: result.stack.readAddress(),
+            jettonWalletCode: result.stack.readCell()
+        }
     }
 }

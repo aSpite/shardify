@@ -129,6 +129,7 @@ export class JettonMinter implements Contract {
             value: toNano("0.1"),
         });
     }
+
     async getWalletAddress(provider: ContractProvider, owner: Address): Promise<Address> {
         const res = await provider.get('get_wallet_address', [{ type: 'slice', cell: beginCell().storeAddress(owner).endCell() }])
         return res.stack.readAddress()

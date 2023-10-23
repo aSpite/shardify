@@ -1,4 +1,5 @@
 import {Address, beginCell, Cell} from "ton-core";
+import {sign} from "ton-crypto";
 
 export function getJettonWallet(ownerAddress: Address, jettonMasterAddress: Address, jettonWalletCode: Cell,
                                 partsCount: bigint, holderCode: Cell) {
@@ -25,4 +26,19 @@ export function getJettonWallet(ownerAddress: Address, jettonMasterAddress: Addr
 
 export function bufferToBigInt(x: Buffer) {
     return BigInt('0x' + x.toString('hex'))
+}
+
+export function getFracBody(validUntil: number, nftItemIndex: number, nftItemCode: Cell,
+                            fracPrice:bigint, creatorFeeNumerator: number) {
+    return beginCell()
+        .storeUint(validUntil, 32)
+        .storeUint(nftItemIndex, 64)
+        .storeRef(nftItemCode)
+        .storeCoins(fracPrice)
+        .storeUint(creatorFeeNumerator, 8)
+        .endCell();
+}
+
+export function signFracBody(body: Cell, privateKey: Buffer) {
+    return sign(body.hash(), privateKey)
 }

@@ -110,11 +110,10 @@ slice zero_address() asm "b{00} PUSHSLICE";
     if(op == op::return_nft) {
         int jetton_amount = in_msg_body~load_coins();
         slice nft_address = in_msg_body~load_msg_addr();
-        slice wallet_owner_address = in_msg_body~load_msg_addr();
+        slice storage::last_taker_address = in_msg_body~load_msg_addr();
         in_msg_body.end_parse();
-        storage::last_taker_address = sender;
         throw_unless(error::unauthorized,
-            equal_slices(calculate_user_jetton_wallet_address(wallet_owner_address, storage::jetton_master_address,
+            equal_slices(calculate_user_jetton_wallet_address(storage::last_taker_address, storage::jetton_master_address,
                 storage::jetton_wallet_code, storage::parts_count, storage::holder_code), sender)
         );
         throw_unless(error::wrong_nft, equal_slices(nft_address, storage::nft_address));
@@ -129,7 +128,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
             .store_coins(300000000)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(get_nft_transfer_body(
-            query_id, wallet_owner_address, my_address(), 0, null())
+            query_id, storage::last_taker_address, my_address(), 0, null())
                 )
                 .end_cell()
         , 1); ;; pay fees separately, revert on errors
@@ -138,13 +137,20 @@ slice zero_address() asm "b{00} PUSHSLICE";
 
     if(op == op::nft_excesses) {
         throw_unless(error::wrong_nft, equal_slices(sender, storage::nft_address));
+        ;; TODO: Reserve for storage
+        cell burn_body = begin_cell()
+            .store_uint(op::burn_notification, 32)
+            .store_uint(query_id, 64)
+            .store_coins(storage::parts_count)
+            .store_slice(storage::nft_address)
+            .store_slice(storage::last_taker_address)
+            .end_cell();
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
-            .store_slice(storage::last_taker_address)
+            .store_slice(storage::jetton_master_address)
             .store_coins(0)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(op::nft_excesses, 32)
-            .store_uint(query_id, 64)
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_ref(burn_body)
             .end_cell()
             , 128);
         storage::last_taker_address = zero_address();

@@ -1,3 +1,20 @@
+bool_false$0 = Bool;
+bool_true$1 = Bool;
+
+nothing$0 {X:Type} = Maybe X;
+just$1 {X:Type} value:X = Maybe X;
+anycast_info$_ depth:(#<= 30) { depth >= 1 }
+   rewrite_pfx:(bits depth) = Anycast;
+addr_std$10 anycast:(Maybe Anycast)
+   workchain_id:int8 address:bits256  = MsgAddressInt;
+
+var_uint$_ {n:#} len:(#< n) value:(uint (len * 8))
+         = VarUInteger n;
+nanograms$_ amount:(VarUInteger 16) = Grams;
+_ grams:Grams = Coins;
+
+
+
 // NFT Holder
 _ jetton_master_address:MsgAddressInt nft_address:MsgAddressInt own_nft:Bool
   last_taker_address:MsgAddressInt jetton_wallet_code:^Cell = NftHolderStorage;
@@ -9,6 +26,7 @@ repeat_return#6855e245 query_id:uint64 owner_address:MsgAddressInt =
 return_fail#bd017ec7 query_id:uint64 nft_address:MsgAddressInt =
   InternalMsgBody; // 0x3d017ec7 | 0x80000000 = 0xbd017ec7
 
+
 // Jetton Minter
 frac_data$_ parts_count:Coins nft_holder_dara:^Cell public_key:uint256 collection_address:MsgAddressInt
   creator_address:MsgAddressInt = FracData;
@@ -16,7 +34,8 @@ _ balance:Coins owner_address:MsgAddressInt content:^Cell
   jetton_wallet_code:^Cell frac_data:^FracData = JettonMinterStorage;
 
 forward_payload$_ signature:bits512 ^[ valid_until:uint32 nft_item_index:uint64 nft_item_code:^Cell
-  frac_price:Coins creator_fee_numerator:uint8 ] = ForwardPayload
+  frac_price:Coins creator_fee_numerator:uint8 ] = NFTForwardPayload;
+
 
 // Jetton Wallet
 _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt

@@ -1,4 +1,5 @@
-import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, toNano } from 'ton-core';
+import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
+import {OPCODES} from "../config";
 
 export type JettonWalletConfig = {
     balance: 0n,
@@ -82,6 +83,19 @@ export class JettonWallet implements Contract {
             value:value
         });
 
+    }
+
+    async sendReturnNft(provider: ContractProvider, via: Sender,
+                        value: bigint, queryId: bigint, nftAddress: Address) {
+        await provider.internal(via, {
+            value: value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell()
+                .storeUint(OPCODES.JETTON_DEFRAC_NFT, 32)
+                .storeUint(queryId, 64)
+                .storeAddress(nftAddress)
+                .endCell()
+        });
     }
     /*
       burn#595f07bc query_id:uint64 amount:(VarUInteger 16)

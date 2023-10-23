@@ -1,5 +1,5 @@
 import {Blockchain, internal, printTransactionFees, SandboxContract, TreasuryContract} from '@ton-community/sandbox';
-import {Address, beginCell, Cell, toNano} from 'ton-core';
+import {Address, beginCell, toNano} from 'ton-core';
 import { JettonMinter } from '../wrappers/JettonMinter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
@@ -8,7 +8,6 @@ import {bufferToBigInt, getFracBody, getJettonWallet, signFracBody} from "./help
 import {NftItem} from "../wrappers/NftItem";
 import {OPCODES} from "../config";
 import {NftHolder} from "../wrappers/NftHolder";
-import exp from "constants";
 import {JettonWallet} from "../wrappers/JettonWallet";
 
 describe('Fractionalization', () => {
@@ -102,7 +101,7 @@ describe('Fractionalization', () => {
     //
     // });
 
-    it('should deploy', async () => {
+    it('fractionalization', async () => {
         const valid_until = Math.ceil(Date.now() / 1000) + 120; // 2 minutes
         const price = toNano(20);
         const creatorFeeNumerator = 5;
@@ -111,6 +110,7 @@ describe('Fractionalization', () => {
             .storeBuffer(signFracBody(fracBody, keyPair.secretKey))
             .storeRef(fracBody)
             .endCell();
+
         let result = await nft.sendTransfer(nftOwner.getSender(), toNano(30), 3, jettonMinter.address,
             nftOwner.address, toNano(28), forwardPayload);
         printTransactionFees(result.transactions)
@@ -122,9 +122,9 @@ describe('Fractionalization', () => {
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,
-            to: nftHolder.address,
-            deploy: true,
-            success: true
+            to: poolCreator.address,
+            success: true,
+            value: toNano(1)
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,
@@ -134,9 +134,15 @@ describe('Fractionalization', () => {
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,
-            to: poolCreator.address,
+            to: nftHolder.address,
+            deploy: true,
+            success: true
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: jettonMinter.address,
+            to: nft.address,
             success: true,
-            value: toNano(1)
+            op: OPCODES.NFT_TRANSFER,
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,
@@ -147,14 +153,20 @@ describe('Fractionalization', () => {
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,
-            to: nft.address,
-            success: true,
-            op: OPCODES.NFT_TRANSFER,
-        });
-        expect(result.transactions).toHaveTransaction({
-            from: jettonMinter.address,
             to: nftOwner.address,
             success: true
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.NFT_OWNERSHIP_ASSIGNED
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: jettonWallet.address,
+            to: nftOwner.address,
+            success: true,
+            op: OPCODES.EXCESSES
         });
         const walletData = await jettonWallet.getWalletData();
         expect(walletData.balance).toStrictEqual(50n);
@@ -164,5 +176,45 @@ describe('Fractionalization', () => {
         expect(holderData.nftAddress.toString()).toStrictEqual(nft.address.toString());
         expect(holderData.jettonMasterAddress.toString()).toStrictEqual(jettonMinter.address.toString());
         expect(await jettonMinter.getTotalSupply()).toStrictEqual(50n);
+    });
+
+    it('defractionalization', async () => {
+        let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(1), 4n, nft.address);
+        printTransactionFees(result.transactions)
+        expect(result.transactions).toHaveTransaction({
+            from: jettonWallet.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.HOLDER_RETURN
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: nftHolder.address,
+            to: nft.address,
+            success: true,
+            op: OPCODES.NFT_TRANSFER
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: nft.address,
+            to: nftHolder.address,
+            success: true,
+            op: OPCODES.EXCESSES
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: nftHolder.address,
+            to: jettonMinter.address,
+            success: true,
+            op: OPCODES.JETTON_BURN_NOTIFICATION
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: jettonMinter.address,
+            to: nftOwner.address,
+            success: true,
+        });
+        expect((await nft.getNftData()).owner!.toString()).toStrictEqual(nftOwner.address.toString());
+        expect((await jettonWallet.getWalletData()).balance).toStrictEqual(0n);
+        expect((await jettonMinter.getTotalSupply())).toStrictEqual(0n);
+        const holderData = await nftHolder.getHolderData();
+        expect(holderData.ownNft).toBeFalsy();
+        expect(holderData.lastTakerAddress).toBeNull();
     });
 });

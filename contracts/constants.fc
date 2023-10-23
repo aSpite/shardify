@@ -13,6 +13,7 @@ const int fee::jetton_defrac_nft = 100000000; ;; 0.1 TON
 
 const int error::insufficient_gas = 104;
 const int error::insufficient_balance = 105;
+const int error::not_nft_holder = 106;
 
 ;; Minter
 const int op::mint = 21;

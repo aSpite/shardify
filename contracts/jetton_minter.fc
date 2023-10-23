@@ -11,6 +11,8 @@
 #include "constants.fc";
 #include "utils.fc";
 
+(int) div_floor(int x, int y) impure asm "DIV";
+
 (int, slice, cell, cell, cell) load_data() inline {
     slice ds = get_data().begin_parse();
     return (
@@ -31,6 +33,17 @@
     .store_ref(frac_data)
     .end_cell()
     );
+}
+
+() return_nft(slice nft_address, int query_id, slice dest) impure inline {
+    cell body = get_nft_transfer_body(query_id, dest, dest, 0, null());
+    send_raw_message(begin_cell()
+        .store_uint(flag::non_bounceable, 4)
+        .store_slice(nft_address)
+        .store_coins(0)
+        .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_ref(body)
+        .end_cell(), 64);
 }
 
 () mint_tokens(slice to_address, cell jetton_wallet_code, int amount, cell master_msg, int parts_count, cell nft_holder_code) impure {
@@ -143,6 +156,85 @@
     if (op == 4) { ;; change content, delete this for immutable tokens
         throw_unless(73, equal_slices(sender_address, admin_address));
         save_data(total_supply, admin_address, in_msg_body~load_ref(),jetton_wallet_code, frac_data);
+        return ();
+    }
+
+    if (op == op::nft_ownership_assigned) {
+        slice prev_owner = in_msg_body~load_msg_addr();
+        in_msg_body~skip_bits(1); ;; Either Cell ^Cell
+        in_msg_body = in_msg_body.preload_ref().begin_parse();
+        slice signature = in_msg_body~load_bits(512);
+        cell payloadCell = in_msg_body~load_ref();
+        if (~ check_signature(cell_hash(payloadCell), signature, public_key)) {
+            return_nft(sender_address, query_id, prev_owner);
+            return ();
+        }
+        slice payload = payloadCell.begin_parse();
+        int valid_until = payload~load_uint(32);
+        if (valid_until <= now()) {
+            return_nft(sender_address, query_id, prev_owner);
+            return ();
+        }
+        if (~ equal_slices(sender_address, get_nft_address(collection_address, payload~load_uint(64), payload~load_ref()))) {
+            return_nft(sender_address, query_id, prev_owner);
+            return ();
+        }
+        int frac_price = payload~load_coins();
+        if (msg_value > (frac_price + fee::fractionalization)) {
+            return_nft(sender_address, query_id, prev_owner);
+            return ();
+        }
+
+        int creator_fee_numerator = payload~load_uint(8);
+        int creator_part = div_floor(frac_price, creator_fee_numerator) * 100;
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(creator_address)
+            .store_coins(creator_part)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(op::fractionalization_fee, 32)
+            .store_uint(query_id, 64)
+            .end_cell(), 0);
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(admin_address)
+            .store_coins(frac_price - creator_part)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(op::fractionalization_fee, 32)
+            .store_uint(query_id, 64)
+            .end_cell(), 0);
+
+        cell holder_state_init = calculate_holder_state_init(my_address(), sender_address, nft_holder_code);
+        cell holder_body = begin_cell()
+            .store_coins(parts_count)
+            .store_ref(jetton_wallet_code)
+            .store_ref(nft_holder_code)
+            .end_cell();
+        slice holder_address = calculate_holder_address(holder_state_init);
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(holder_address)
+            .store_coins(100000000) ;; 0.1 TON
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1)
+            .store_uint(1, 1)
+            .store_ref(holder_state_init)
+            .store_uint(1, 1)
+            .store_ref(holder_body)
+            .end_cell(), 0);
+
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(sender_address)
+            .store_coins(50000000) ;; 0.05 TON
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_ref(get_nft_transfer_body(query_id, holder_address, sender_address, 20000000, null()))
+            .end_cell(), 0);
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(prev_owner)
+            .store_coins(0)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .end_cell(), 64);
         return ();
     }
 

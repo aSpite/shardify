@@ -6,6 +6,7 @@ global slice storage::jetton_master_address;
 global slice storage::nft_address;
 global slice storage::last_taker_address;
 global cell storage::jetton_wallet_code;
+global cell storage::holder_code;
 global int storage::parts_count;
 global int storage::own_nft?;
 global int storage::init?;
@@ -22,6 +23,7 @@ global int storage::init?;
         storage::own_nft? = ds~load_int(1);
         storage::last_taker_address = ds~load_msg_addr();
         storage::jetton_wallet_code = ds~load_ref();
+        storage::holder_code = ds~load_ref();
     }
 }
 
@@ -34,6 +36,7 @@ global int storage::init?;
             .store_int(storage::own_nft?, 1)
             .store_slice(storage::last_taker_address)
             .store_ref(storage::jetton_wallet_code)
+            .store_ref(storage::holder_code)
             .end_cell()
     );
 }
@@ -74,6 +77,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
         throw_unless(error::unauthorized, equal_slices(storage::jetton_master_address, sender));
         storage::parts_count = in_msg_body~load_coins();
         storage::jetton_wallet_code = in_msg_body~load_ref();
+        storage::holder_code = in_msg_body~load_ref();
         storage::own_nft? = false;
         storage::last_taker_address = zero_address();
         in_msg_body.end_parse();
@@ -110,7 +114,8 @@ slice zero_address() asm "b{00} PUSHSLICE";
         in_msg_body.end_parse();
         storage::last_taker_address = sender;
         throw_unless(error::unauthorized,
-            equal_slices(calculate_user_jetton_wallet_address(wallet_owner_address, storage::jetton_master_address, storage::jetton_wallet_code), sender)
+            equal_slices(calculate_user_jetton_wallet_address(wallet_owner_address, storage::jetton_master_address,
+                storage::jetton_wallet_code, storage::parts_count, storage::holder_code), sender)
         );
         throw_unless(error::wrong_nft, equal_slices(nft_address, storage::nft_address));
         throw_unless(error::not_own, storage::own_nft? == true);
@@ -161,6 +166,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
             )
             .end_cell()
             , 64); ;; pay fees separately, revert on errors
+        return();
     }
 }
 

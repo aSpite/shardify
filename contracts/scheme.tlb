@@ -15,6 +15,11 @@ frac_data$_ parts_count:Coins nft_holder_dara:^Cell public_key:uint256 collectio
 _ balance:Coins owner_address:MsgAddressInt content:^Cell
   jetton_wallet_code:^Cell frac_data:^FracData = JettonMinterStorage;
 
+forward_payload$_ signature:bits512 ^[ valid_until:uint32 nft_item_index:uint64 nft_item_code:^Cell
+  frac_price:Coins pool_fee_numerator:uint8 creator_fee_numerator:uint8 ] = ForwardPayload
+
 // Jetton Wallet
 _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt
   jetton_wallet_code:^Cell parts_count:Coins nft_holder_code:^Cell = JettonWalletStorage;
+
+defrac_nft#3a0f1e4c query_id:uint64 nft_address:MsgAddressInt = InternalMsgBody; // ba0f1e4c & 0x7fffffff = 3a0f1e4c

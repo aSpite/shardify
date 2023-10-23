@@ -39,8 +39,8 @@ export class NftHolder implements Contract {
         via: Sender,
         value: bigint,
         partsCount: bigint,
-        nftAddress: Address,
-        jettonWalletCode: Cell
+        jettonWalletCode: Cell,
+        nftHolderCode: Cell
     ) {
         await provider.internal(via, {
             value,
@@ -48,6 +48,7 @@ export class NftHolder implements Contract {
                 body: beginCell()
                     .storeCoins(partsCount)
                     .storeRef(jettonWalletCode)
+                    .storeRef(nftHolderCode)
                 .endCell(),
         });
     }

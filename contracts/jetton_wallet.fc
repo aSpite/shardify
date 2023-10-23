@@ -201,12 +201,39 @@ This is suitable for most tokens, if you need tokens transferable between workch
         jetton_wallet_code, parts_count, nft_holder_code);
 }
 
+() defrac_nft(slice in_msg_body, int msg_value) impure {
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
+    throw_unless(error::insufficient_gas, msg_value >= fee::jetton_defrac_nft);
+    throw_unless(error::insufficient_balance, balance >= parts_count);
+    balance -= parts_count;
+    int query_id = in_msg_body~load_uint(64);
+    slice nft_address = in_msg_body~load_msg_addr();
+    in_msg_body.end_parse();
+    cell body = begin_cell()
+        .store_uint(op::return_nft, 32)
+        .store_uint(query_id, 64)
+        .store_coins(parts_count)
+        .store_slice(nft_address)
+        .store_slice(owner_address)
+        .end_cell();
+
+    send_raw_message(begin_cell()
+        .store_uint(flag::bounceable, 6)
+        .store_slice(calculate_holder_address(calculate_holder_state_init(jetton_master_address, nft_address, nft_holder_code)))
+        .store_coins(0)
+        .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_ref(body)
+        .end_cell(), 64);
+
+    save_data(balance, owner_address, jetton_master_address,
+        jetton_wallet_code, parts_count, nft_holder_code);
+}
+
 () on_bounce (slice in_msg_body) impure {
     in_msg_body~skip_bits(32); ;; 0xFFFFFFFF
     (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
     int op = in_msg_body~load_uint(32);
-    ;; TODO: Add return_nft opcode
-    throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification));
+    throw_unless(709, (op == op::internal_transfer) | (op == op::burn_notification) | (op == op::return_nft));
     int query_id = in_msg_body~load_uint(64);
     int jetton_amount = in_msg_body~load_coins();
     balance += jetton_amount;
@@ -249,7 +276,10 @@ This is suitable for most tokens, if you need tokens transferable between workch
         return ();
     }
 
-    ;; TODO: Add return fail opcode
+    if (op == op::defrac_nft) {
+        defrac_nft(in_msg_body, msg_value);
+        return ();
+    }
 
     throw(0xffff);
 }

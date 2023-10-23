@@ -67,3 +67,38 @@ cell get_nft_transfer_body(int query_id, slice destAddr, slice respAddr, int fwd
     (int parts_count, cell nft_holder_code, int public_key, slice collection_address, slice creator_address) = (ds~load_coins(), ds~load_ref(), ds~load_uint(256), ds~load_msg_addr(), ds~load_msg_addr());
     return (parts_count, nft_holder_code, public_key, collection_address, creator_address);
 }
+
+cell calculate_holder_state_init(slice jetton_master_address, slice nft_address, cell nft_holder_code) inline {
+    cell data = begin_cell().store_slice(jetton_master_address).store_slice(nft_address).end_cell();
+    return begin_cell()
+    .store_uint(0, 2)
+    .store_dict(nft_holder_code)
+    .store_dict(data)
+    .store_uint(0, 1)
+    .end_cell();
+}
+
+slice calculate_holder_address(cell state_init) inline {
+    return begin_cell()
+        .store_uint(4, 3)
+        .store_int(const::workchain, 8)
+        .store_uint(cell_hash(state_init), 256)
+        .end_cell()
+        .begin_parse();
+}
+
+slice get_nft_address(slice collection_address, int index, cell nft_item_code) {
+    cell data = begin_cell().store_uint(index, 64).store_slice(collection_address).end_cell();
+    cell state_init = begin_cell()
+        .store_uint(0, 2)
+        .store_dict(nft_item_code)
+        .store_dict(data)
+        .store_uint(0, 1)
+        .end_cell();
+    return begin_cell()
+        .store_uint(4, 3)
+        .store_int(const::workchain, 8)
+        .store_uint(cell_hash(state_init), 256)
+        .end_cell()
+        .begin_parse();
+}

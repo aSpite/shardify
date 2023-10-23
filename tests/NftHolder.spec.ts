@@ -12,17 +12,13 @@ import { compile } from '@ton-community/blueprint';
 import {NftItem} from "../wrappers/NftItem";
 import {ERRORS, OPCODES} from "../config";
 import {getJettonWallet} from "./helper";
+import {AccountStateActive} from "ton-core/dist/types/AccountState";
 
 describe('NftHolder', () => {
     let code: Cell;
-
-    beforeAll(async () => {
-        code = await compile('NftHolder');
-    });
-
     let blockchain: Blockchain;
     let nftHolder: SandboxContract<NftHolder>;
-    let jettonWalletCode: Cell = Cell.EMPTY;
+    let jettonWalletCode: Cell;
     let deployer: SandboxContract<TreasuryContract>;
     let masterTreasury: SandboxContract<TreasuryContract>; // simulate jetton master
     let deployerJettonWallet: Address; // jetton wallet address for deployer
@@ -31,7 +27,8 @@ describe('NftHolder', () => {
     let nftAfterSent: SmartContractSnapshot;
     let holderAfterSent: SmartContractSnapshot;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
+        code = await compile('NftHolder');
         blockchain = await Blockchain.create();
         jettonWalletCode   = await compile('JettonWallet');
         deployer       = await blockchain.treasury('deployer');
@@ -48,8 +45,8 @@ describe('NftHolder', () => {
         }, code));
 
         const holderDeployResult = await nftHolder.sendDeploy(
-            masterTreasury.getSender(), toNano('0.05'), 50n, nft.address, Cell.EMPTY
-            );
+            masterTreasury.getSender(), toNano('0.05'), 50n, jettonWalletCode, code
+        );
 
         expect(holderDeployResult.transactions).toHaveTransaction({
             from: masterTreasury.address,
@@ -77,7 +74,9 @@ describe('NftHolder', () => {
         deployerJettonWallet = getJettonWallet(
             deployer.address,
             masterTreasury.address,
-            await nftHolder.getJettonWalletCode()
+            jettonWalletCode,
+            50n,
+            code
         );
         nftAfterSent = (await blockchain.getContract(nft.address)).snapshot();
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);

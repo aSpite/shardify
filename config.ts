@@ -5,7 +5,9 @@ export const OPCODES = {
 
     HOLDER_RETURN: 0x1a3fdbcf,
     HOLDER_RETURN_FAIL: 0xbd017ec7,
-    HOLDER_REPEAT_RETURN: 0x6855e245
+    HOLDER_REPEAT_RETURN: 0x6855e245,
+
+    JETTON_DEFRAC_NFT: 0x3a0f1e4c
 }
 
 export const ERRORS = {

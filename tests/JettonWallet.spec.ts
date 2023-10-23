@@ -33,7 +33,7 @@ describe('JettonWallet', () => {
     let deployer:SandboxContract<TreasuryContract>;
     let notDeployer:SandboxContract<TreasuryContract>;
     let jettonMinter:SandboxContract<JettonMinter>;
-    let userWallet:any;
+    let userWallet:(address: Address) => Promise<SandboxContract<JettonWallet>>;
     let defaultContent:Cell;
 
     beforeAll(async () => {
@@ -271,7 +271,7 @@ describe('JettonWallet', () => {
         let sentAmount = toNano('0.5');
         let forwardAmount = toNano('0.05');
         let forwardPayload = beginCell().storeUint(0x1234567890abcdefn, 128).endCell();
-        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.1'), //tons
+        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.15'), //tons
             sentAmount, notDeployer.address,
             deployer.address, null, forwardAmount, forwardPayload);
         expect(sendResult.transactions).toHaveTransaction({ //excesses

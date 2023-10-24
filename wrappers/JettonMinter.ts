@@ -4,17 +4,18 @@ export type JettonMinterContent = {
     type:0|1,
     uri:string
 };
+export type FracData = {
+    partsCount: bigint;
+    nftHolderCode: Cell;
+    publicKey: bigint;
+    collectionAddress: Address;
+    creatorAddress: Address;
+};
 export type JettonMinterConfig = {
     admin: Address;
     content: Cell;
     wallet_code: Cell;
-    fracData: {
-        partsCount: bigint;
-        nftHolderCode: Cell;
-        publicKey: bigint;
-        collectionAddress: Address;
-        creatorAddress: Address;
-    }
+    fracData: FracData
 };
 
 export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
@@ -162,5 +163,16 @@ export class JettonMinter implements Contract {
     async getContent(provider: ContractProvider) {
         let res = await this.getJettonData(provider);
         return res.content;
+    }
+
+    async getFracData(provider: ContractProvider): Promise<FracData> {
+        const result = await provider.get('get_frac_data', []);
+        return {
+            partsCount: result.stack.readBigNumber(),
+            nftHolderCode: result.stack.readCell(),
+            publicKey: result.stack.readBigNumber(),
+            collectionAddress: result.stack.readAddress(),
+            creatorAddress: result.stack.readAddress(),
+        }
     }
 }

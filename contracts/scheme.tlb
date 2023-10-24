@@ -32,9 +32,12 @@ frac_data$_ parts_count:Coins nft_holder_dara:^Cell public_key:uint256 collectio
   creator_address:MsgAddressInt = FracData;
 _ balance:Coins owner_address:MsgAddressInt content:^Cell
   jetton_wallet_code:^Cell frac_data:^FracData = JettonMinterStorage;
-
 forward_payload$_ signature:bits512 ^[ valid_until:uint32 nft_item_index:uint64 nft_item_code:^Cell
   frac_price:Coins creator_fee_numerator:uint8 ] = NFTForwardPayload;
+
+change_pubkey#39e3c76e query_id:uint64 public_key:uint216 = InternalMsgBody; // 0xb9e3c76e & 0x7fffffff = 0x39e3c76e
+withdraw_nft#502c1cc2 query_id:uint64 nft_address:MsgAddressInt
+  destination_address:MsgAddressInt = InternalMsgBody; // 0x502c1cc2 & 0x7fffffff = 0x502c1cc2
 
 
 // Jetton Wallet
@@ -42,3 +45,11 @@ _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt
   jetton_wallet_code:^Cell parts_count:Coins nft_holder_code:^Cell = JettonWalletStorage;
 
 defrac_nft#3a0f1e4c query_id:uint64 nft_address:MsgAddressInt = InternalMsgBody; // ba0f1e4c & 0x7fffffff = 3a0f1e4c
+
+
+// Pool Master
+_ admin_address:MsgAddressInt public_key:uint256 = PoolMasterStorage;
+
+_ price:Coins collection_content:^Cell jetton_wallet_code:^Cell fractionalization_data:^FracData = PoolCreationPayload;
+create_pool#198a7cad query_id:uint64 signature:bits512 payload:^PoolCreationPayload
+  jetton_minter_code:^Cell = InternalMsgBody; // 0x998a7cad & 0x7fffffff = 0x198a7cad

@@ -20,6 +20,8 @@ const int error::not_nft_holder = 106;
 const int op::mint = 21;
 const int op::provide_wallet_address = 0x2c76b973;
 const int op::take_wallet_address = 0xd1735400;
+const int op::change_pubkey = 0x39e3c76e;
+const int op::withdraw_nft = 0x502c1cc2;
 ;; TODO: Change this
 const int op::fractionalization_fee = 6;
 
@@ -51,3 +53,8 @@ const int error::not_nft_transfer = 103;
 
 const int flag::bounceable = 0x18;
 const int flag::non_bounceable = 0x10;
+
+;; Pool Master
+const int op::create_pool = 0x198a7cad;
+
+const int fee::pool_creation = 1000000000;

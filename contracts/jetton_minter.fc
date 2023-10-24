@@ -189,7 +189,7 @@
 
         int creator_fee_numerator = payload~load_uint(8);
         int creator_part = frac_price * creator_fee_numerator / 100;
-        raw_reserve(my_balance - msg_value, 0);
+        raw_reserve(my_balance - msg_value + 100000000, 0);
         if(creator_part > 0) {
             send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
@@ -257,12 +257,39 @@
         return ();
     }
 
+    if (op == op::change_pubkey) {
+        throw_unless(error::unauthorized, equal_slices(sender_address, admin_address));
+        int new_public_key = in_msg_body~load_uint(256);
+        cell new_frac_data = begin_cell()
+            .store_uint(parts_count, 32)
+            .store_ref(nft_holder_code)
+            .store_uint(new_public_key, 256)
+            .store_slice(collection_address)
+            .store_slice(creator_address)
+            .end_cell();
+        save_data(total_supply, admin_address, content, jetton_wallet_code, new_frac_data);
+        return ();
+    }
+
+    if (op == op::withdraw_nft) {
+        throw_unless(error::unauthorized, equal_slices(sender_address, admin_address));
+        slice nft_address = in_msg_body~load_msg_addr();
+        slice destionation_address = in_msg_body~load_msg_addr();
+        return_nft(nft_address, query_id, destionation_address);
+        return ();
+    }
+
     throw(0xffff);
 }
 
 (int, int, slice, cell, cell) get_jetton_data() method_id {
     (int total_supply, slice admin_address, cell content, cell jetton_wallet_code, _) = load_data();
     return (total_supply, -1, admin_address, content, jetton_wallet_code);
+}
+
+(int, cell, int, slice, slice) get_frac_data() method_id {
+    (_, _, _, _, cell frac_data) = load_data();
+    return(unpack_frac_data(frac_data));
 }
 
 slice get_wallet_address(slice owner_address) method_id {

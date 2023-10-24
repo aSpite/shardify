@@ -174,7 +174,7 @@ describe('JettonWallet', () => {
         let initialJettonBalance2 = await notDeployerJettonWallet.getJettonBalance();
         let sentAmount = toNano('0.5');
         let forwardAmount = toNano('0.05');
-        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.1'), //tons
+        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.13'), //tons
             sentAmount, notDeployer.address,
             deployer.address, null, forwardAmount, null);
         expect(sendResult.transactions).toHaveTransaction({ //excesses

@@ -190,8 +190,8 @@
         int creator_fee_numerator = payload~load_uint(8);
         int creator_part = frac_price * creator_fee_numerator / 100;
         raw_reserve(my_balance - msg_value, 0);
-        ;; TODO: Do not send if 0
-        send_raw_message(begin_cell()
+        if(creator_part > 0) {
+            send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(creator_address)
             .store_coins(creator_part)
@@ -199,6 +199,7 @@
             .store_uint(op::fractionalization_fee, 32)
             .store_uint(query_id, 64)
             .end_cell(), 1);
+        }
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
             .store_slice(admin_address)

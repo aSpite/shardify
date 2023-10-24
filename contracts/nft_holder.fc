@@ -43,7 +43,7 @@ global int storage::init?;
 
 slice zero_address() asm "b{00} PUSHSLICE";
 
-() recv_internal(cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
     slice cs = in_msg_full.begin_parse();
     int flags = cs~load_uint(4);
     load_data();
@@ -58,16 +58,16 @@ slice zero_address() asm "b{00} PUSHSLICE";
             .store_uint(query_id, 64)
             .store_slice(storage::nft_address)
             .end_cell();
-        storage::last_taker_address = zero_address();
-
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
-            .store_slice(storage::last_taker_address)
+            .store_slice(calculate_jetton_wallet_address(calculate_jetton_wallet_state_init(storage::last_taker_address,
+                storage::jetton_master_address, storage::jetton_wallet_code, storage::parts_count, storage::holder_code)))
             .store_coins(0)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(msg_body)
             .end_cell()
-            , 66);
+            , 64);
+        storage::last_taker_address = zero_address();
         save_data();
         return ();
     }
@@ -123,15 +123,13 @@ slice zero_address() asm "b{00} PUSHSLICE";
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(storage::nft_address)
-            ;; 0.3 TON for cases where there are not enough funds on the contract to pay storage fee
-            ;; this value also consider NFTs with onchain metadata
-            .store_coins(300000000)
+            .store_coins(0)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_ref(get_nft_transfer_body(
             query_id, storage::last_taker_address, my_address(), 0, null())
                 )
                 .end_cell()
-        , 1); ;; pay fees separately, revert on errors
+        , 64);
         return();
     }
 

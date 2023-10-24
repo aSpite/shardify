@@ -201,14 +201,14 @@ Deployer jetton wallet address: ${deployerJettonWallet.toString()}`);
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
         let returnNft = await sendReturnNft(
-            deployerJettonWallet, toNano('0.4'), nft.address);
+            deployerJettonWallet, toNano('0.023'), nft.address);
         expect(returnNft.transactions).toHaveTransaction({
             from: nft.address,
             to: nftHolder.address,
             success: false,
             inMessageBounced: true,
             exitCode: 0,
-            actionResultCode: 34
+            actionResultCode: 37
         });
 
         const data = await nftHolder.getHolderData();
@@ -220,14 +220,14 @@ Deployer jetton wallet address: ${deployerJettonWallet.toString()}`);
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         (await blockchain.getContract(nftHolder.address)).loadFrom(holderAfterSent);
         let returnNft = await sendReturnNft(
-            deployerJettonWallet, toNano('0.5'), nft.address);
+            deployerJettonWallet, toNano('0.023'), nft.address);
         expect(returnNft.transactions).toHaveTransaction({
             from: nft.address,
             to: nftHolder.address,
             success: false,
             inMessageBounced: true,
             exitCode: 0,
-            actionResultCode: 34
+            actionResultCode: 37
         });
         let nftData = await nft.getNftData();
         expect(nftData.owner!.toString()).toStrictEqual(deployer.address.toString());

@@ -229,6 +229,25 @@ This is suitable for most tokens, if you need tokens transferable between workch
         jetton_wallet_code, parts_count, nft_holder_code);
 }
 
+() on_return_fail(slice in_msg_body, slice sender_address) impure {
+    (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
+    int query_id = in_msg_body~load_uint(64);
+    slice nft_address = in_msg_body~load_msg_addr();
+    throw_unless(error::unauthorized, equal_slices(sender_address, calculate_holder_address(
+        calculate_holder_state_init(jetton_master_address, nft_address, nft_holder_code))
+    ));
+    save_data(balance + parts_count, owner_address, jetton_master_address, jetton_wallet_code, parts_count, nft_holder_code);
+    send_raw_message(begin_cell()
+        .store_uint(flag::non_bounceable, 6)
+        .store_slice(owner_address)
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(op::return_fail, 32)
+        .store_uint(query_id, 64)
+        .store_slice(nft_address)
+        .end_cell(), 66);
+}
+
 () on_bounce (slice in_msg_body) impure {
     in_msg_body~skip_bits(32); ;; 0xFFFFFFFF
     (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
@@ -283,7 +302,7 @@ This is suitable for most tokens, if you need tokens transferable between workch
     }
 
     if (op == op::return_fail) {
-        ;; TODO: Add functionality
+        on_return_fail(in_msg_body, sender_address);
         return ();
     }
 

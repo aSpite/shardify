@@ -102,6 +102,14 @@ slice zero_address() asm "b{00} PUSHSLICE";
                 .end_cell(), 64);
             return();
         }
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(storage::nft_address)
+            .store_coins(0)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(op::excesses, 32)
+            .store_uint(query_id, 64)
+            .end_cell(), 66); ;; ignore errors
         storage::own_nft? = true;
         save_data();
         return();

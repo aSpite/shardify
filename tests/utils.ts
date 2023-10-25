@@ -1,4 +1,5 @@
 import {Address, toNano, Transaction} from "ton";
+import {OPCODES} from "../config";
 
 export const randomAddress = (wc: number = 0) => {
     const buf = Buffer.alloc(32);
@@ -51,7 +52,15 @@ function formatCoins(value: bigint | undefined, precision = 6): string {
     return formatCoinsPure(value, precision) + ' TON';
 }
 
-export function printTransactionFees(transactions: Transaction[], title: string) {
+function getOpcodes() {
+    const opcodes: { [key: number]: string } = {};
+    for (const [key, value] of Object.entries(OPCODES)) {
+        opcodes[value] = key;
+    }
+    return opcodes;
+}
+
+export function printTransactionFees(transactions: Transaction[], title: string, addresses: { [key: string]: string }) {
     console.table(
         transactions
             .map((tx) => {
@@ -59,6 +68,7 @@ export function printTransactionFees(transactions: Transaction[], title: string)
 
                 const body = tx.inMessage?.info.type === 'internal' ? tx.inMessage?.body.beginParse() : undefined;
                 const op = body === undefined ? 'N/A' : (body.remainingBits >= 32 ? body.preloadUint(32) : 'no body');
+                const opcodes = getOpcodes();
                 const bodyCopy = body;
                 const query = bodyCopy === undefined ? 'N/A' : (bodyCopy.remainingBits >= 64 ? bodyCopy.skip(32).loadUintBig(64) : 'no body');
                 const totalFees = formatCoins(tx.totalFees.coins);
@@ -85,11 +95,12 @@ export function printTransactionFees(transactions: Transaction[], title: string)
                 const forwardIn = formatCoins(
                     tx.inMessage?.info.type === 'internal' ? tx.inMessage.info.forwardFee : undefined,
                 );
-
                 return {
                     title,
-                    op: typeof op === 'number' ? ('0x' + op.toString(16)) : op,
+                    op: typeof op === 'number' ? opcodes[op] != undefined ? opcodes[op] : op.toString(16) : op,
                     query: typeof query === 'bigint' ? ('0x' + query.toString(16)) : query,
+                    contract: addresses[`${tx.inMessage?.info.dest!.toString()}`],
+                    from: tx.inMessage?.info.type === 'internal' ? addresses[tx.inMessage.info.src.toString()] : 'N/A',
                     valueIn,
                     valueOut,
                     totalFees: totalFees,

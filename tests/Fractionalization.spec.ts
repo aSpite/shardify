@@ -5,7 +5,7 @@ import {
     SmartContractSnapshot,
     TreasuryContract
 } from '@ton-community/sandbox';
-import {Address, beginCell, Cell, toNano} from 'ton-core';
+import {address, Address, beginCell, Cell, toNano} from 'ton-core';
 import { JettonMinter } from '../wrappers/JettonMinter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
@@ -50,6 +50,7 @@ describe('Fractionalization', () => {
     // ----- Others -----
     let keyPair: KeyPair;
     let keyPair2: KeyPair;
+    let addresses: { [key: string]: string } = {};
 
     beforeAll(async () => {
         blockchain = await Blockchain.create();
@@ -63,6 +64,7 @@ describe('Fractionalization', () => {
         nftOwner = await blockchain.treasury('nft owner');
         keyPair = await mnemonicToWalletKey('harbor lobster spin vessel lamp text check magic stone element abstract guide citizen praise tube reject patch what stuff space fork radio symbol brother'.split(' '));
         keyPair2 = await mnemonicToWalletKey('teach crew goat trouble gentle yellow solution iron broken task kiwi stay ladder flame merry actual home connect episode try protect salmon machine cushion'.split(' '));
+
 
         poolMaster = blockchain.openContract(PoolMaster.createFromConfig({
             adminAddress: admin.address,
@@ -148,6 +150,19 @@ Pool creator address: ${poolCreator.address.toString()}
 User address: ${user.address.toString()}
 Collection address: ${collectionAddress.toString()}
 Pool master address: ${poolMaster.address.toString()}`);
+        addresses = {
+            [nft.address.toString()]: 'nft',
+            [nftHolder.address.toString()]: 'nft holder',
+            [jettonMinter.address.toString()]: 'jetton minter',
+            [jettonWallet.address.toString()]: 'jetton wallet',
+            [nftOwner.address.toString()]: 'nft owner',
+            [admin.address.toString()]: 'admin',
+            [poolCreator.address.toString()]: 'pool creator',
+            [user.address.toString()]: 'user',
+            [collectionAddress.toString()]: 'collection',
+            [poolMaster.address.toString()]: 'pool master'
+
+        }
     });
 
     // beforeEach(async () => {
@@ -182,14 +197,13 @@ Pool master address: ${poolMaster.address.toString()}`);
             to: poolCreator.address,
             success: true
         });
-
+        printTransactionFees(result.transactions, 'creating pool', addresses);
         const minterData = await jettonMinter.getFracData();
         expect(minterData.partsCount).toStrictEqual(50n);
         expect(minterData.nftHolderCode.hash().toString('hex')).toStrictEqual(nftHolderCode.hash().toString('hex'));
         expect(minterData.publicKey).toStrictEqual(bufferToBigInt(keyPair.publicKey));
         expect(minterData.collectionAddress.toString()).toStrictEqual(collectionAddress.toString());
         expect(minterData.creatorAddress.toString()).toStrictEqual(poolCreator.address.toString());
-        printTransactionFees(result.transactions, 'creating pool');
     });
 
     it('fractionalization', async () => {
@@ -201,11 +215,11 @@ Pool master address: ${poolMaster.address.toString()}`);
             .storeBuffer(signFracBody(fracBody, keyPair.secretKey))
             .storeRef(fracBody)
             .endCell();
-
+        const balanceBefore = await nftOwner.getBalance();
         let result = await nft.sendTransfer(nftOwner.getSender(), toNano(30), 3, jettonMinter.address,
             nftOwner.address, toNano(28), forwardPayload);
         nftAfterSent = (await blockchain.getContract(nft.address)).snapshot();
-        printTransactionFees(result.transactions, 'fractionalization');
+        printTransactionFees(result.transactions, 'fractionalization', addresses);
         expect(result.transactions).toHaveTransaction({
             from: nft.address,
             to: jettonMinter.address,
@@ -269,12 +283,13 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(holderData.nftAddress.toString()).toStrictEqual(nft.address.toString());
         expect(holderData.jettonMasterAddress.toString()).toStrictEqual(jettonMinter.address.toString());
         expect(await jettonMinter.getTotalSupply()).toStrictEqual(50n);
+        console.log(`Balance change: ${((await nftOwner.getBalance()) - balanceBefore).toLocaleString()}`);
     });
 
     it('handle fail when defrac', async () => {
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(2), 4n, nft.address);
-        printTransactionFees(result.transactions, 'handle fail when defrac')
+        printTransactionFees(result.transactions, 'handle fail when defrac', addresses)
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
             to: nftHolder.address,
@@ -319,7 +334,7 @@ Pool master address: ${poolMaster.address.toString()}`);
 
     it('defractionalization', async () => {
         let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(1), 4n, nft.address);
-        printTransactionFees(result.transactions, 'defractionalization')
+        printTransactionFees(result.transactions, 'defractionalization', addresses)
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
             to: nftHolder.address,

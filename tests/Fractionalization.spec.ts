@@ -5,7 +5,7 @@ import {
     SmartContractSnapshot,
     TreasuryContract
 } from '@ton-community/sandbox';
-import {address, Address, beginCell, Cell, toNano} from 'ton-core';
+import {Address, beginCell, Cell, toNano} from 'ton-core';
 import { JettonMinter } from '../wrappers/JettonMinter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
@@ -216,6 +216,7 @@ Pool master address: ${poolMaster.address.toString()}`);
             .storeRef(fracBody)
             .endCell();
         const balanceBefore = await nftOwner.getBalance();
+        const minterBalanceBefore = (await blockchain.getContract(jettonMinter.address)).balance;
         let result = await nft.sendTransfer(nftOwner.getSender(), toNano(30), 3, jettonMinter.address,
             nftOwner.address, toNano(28), forwardPayload);
         nftAfterSent = (await blockchain.getContract(nft.address)).snapshot();
@@ -283,7 +284,27 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(holderData.nftAddress.toString()).toStrictEqual(nft.address.toString());
         expect(holderData.jettonMasterAddress.toString()).toStrictEqual(jettonMinter.address.toString());
         expect(await jettonMinter.getTotalSupply()).toStrictEqual(50n);
-        console.log(`Balance change: ${((await nftOwner.getBalance()) - balanceBefore).toLocaleString()}`);
+        // gas consumption ~ 0.75 TON
+        console.log(`NFT owner balance change: ${((await nftOwner.getBalance()) - balanceBefore).toLocaleString()}
+Jetton minter balance change: ${((await blockchain.getContract(jettonMinter.address)).balance - minterBalanceBefore).toLocaleString()}`);
+        const blockchainBefore = blockchain.snapshot();
+        blockchain.now = Math.ceil(Date.now() / 1000) + 60 * 60 * 24 * 365; // Fast forward time for 1 year
+        // const test = await blockchain.sendMessage(internal({
+        //     from: nftOwner.address,
+        //     to: jettonMinter.address,
+        //     value: toNano(1),
+        // }))
+        // console.log(test.transactions[0])
+        // storageFeesCollected: 31635128n = 0.031635128 TON
+
+        // const test = await blockchain.sendMessage(internal({
+        //     from: nftOwner.address,
+        //     to: nftHolder.address,
+        //     value: toNano(1),
+        // }));
+        // console.log(test.transactions[0])
+        // storageFeesCollected: 17471454n = 0.017471454 TON
+        await blockchain.loadFrom(blockchainBefore);
     });
 
     it('handle fail when defrac', async () => {
@@ -333,7 +354,9 @@ Pool master address: ${poolMaster.address.toString()}`);
     });
 
     it('defractionalization', async () => {
+        const holderBalanceBefore = (await blockchain.getContract(nftHolder.address)).balance;
         let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(1), 4n, nft.address);
+        // gas consumption ~ 0,042396 TON
         printTransactionFees(result.transactions, 'defractionalization', addresses)
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
@@ -370,6 +393,9 @@ Pool master address: ${poolMaster.address.toString()}`);
         const holderData = await nftHolder.getHolderData();
         expect(holderData.ownNft).toBeFalsy();
         expect(holderData.lastTakerAddress).toBeNull();
+        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(30000000n);
+        console.log(`NFT Holder balance before: ${holderBalanceBefore.toLocaleString()}
+NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).balance.toLocaleString()}`);
     });
 
     it('should change admin address by admin address', async () => {

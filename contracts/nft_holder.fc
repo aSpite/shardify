@@ -43,7 +43,7 @@ global int storage::init?;
 
 slice zero_address() asm "b{00} PUSHSLICE";
 
-() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(cell in_msg_full, slice in_msg_body) impure {
     slice cs = in_msg_full.begin_parse();
     int flags = cs~load_uint(4);
     load_data();
@@ -104,7 +104,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
         }
         send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
-            .store_slice(storage::nft_address)
+            .store_slice(in_msg_body.preload_ref().begin_parse())
             .store_coins(0)
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(op::excesses, 32)
@@ -143,7 +143,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
 
     if(op == op::nft_excesses) {
         throw_unless(error::wrong_nft, equal_slices(sender, storage::nft_address));
-        ;; TODO: Reserve for storage
+        raw_reserve(fee::holder_storage, 0);
         cell burn_body = begin_cell()
             .store_uint(op::burn_notification, 32)
             .store_uint(query_id, 64)

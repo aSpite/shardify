@@ -38,7 +38,7 @@ forward_payload$_ signature:bits512 ^[ valid_until:uint32 nft_item_index:uint64 
 change_pubkey#770e2c37 query_id:uint64 public_key:uint256 = InternalMsgBody; // 0xf70e2c37 & 0x7fffffff = 0x770e2c37
 withdraw_nft#502c1cc2 query_id:uint64 nft_address:MsgAddressInt
   destination_address:MsgAddressInt = InternalMsgBody; // 0x502c1cc2 & 0x7fffffff = 0x502c1cc2
-
+fractionalization_fee#363f8bc6 query_id:uint64 = InternalMsgBody; // 0x363f8bc6 & 0x7fffffff = 0x363f8bc6
 
 // ----- Jetton Wallet -----
 _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt

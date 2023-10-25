@@ -296,7 +296,6 @@ This is suitable for most tokens, if you need tokens transferable between workch
     }
 
     if (op == op::defrac_nft) {
-        ;; TODO: Handle fees
         defrac_nft(in_msg_body, msg_value);
         return ();
     }

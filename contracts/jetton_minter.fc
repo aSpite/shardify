@@ -58,7 +58,7 @@
     send_raw_message(msg.end_cell(), 1); ;; pay transfer fees separately, revert on errors
 }
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) { ;; ignore empty messages
         return ();
     }
@@ -161,7 +161,6 @@
     }
 
     if (op == op::nft_ownership_assigned) {
-        ;; TODO: Handle fees
         slice prev_owner = in_msg_body~load_msg_addr();
         in_msg_body~skip_bits(1); ;; Either Cell ^Cell
         in_msg_body = in_msg_body.preload_ref().begin_parse();
@@ -189,7 +188,7 @@
 
         int creator_fee_numerator = payload~load_uint(8);
         int creator_part = frac_price * creator_fee_numerator / 100;
-        raw_reserve(my_balance - msg_value + 100000000, 0);
+        raw_reserve(0, 4);
         if(creator_part > 0) {
             send_raw_message(begin_cell()
             .store_uint(flag::non_bounceable, 6)
@@ -232,7 +231,8 @@
             .store_slice(sender_address)
             .store_coins(50000000) ;; 0.05 TON
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_ref(get_nft_transfer_body(query_id, holder_address, prev_owner, 20000000, null()))
+            .store_ref(get_nft_transfer_body(query_id, holder_address, prev_owner, 20000000,
+                begin_cell().store_slice(prev_owner).end_cell()))
             .end_cell(), 1);
 
         cell master_msg = begin_cell()
@@ -244,7 +244,7 @@
             .store_coins(1)
             .store_uint(0, 1)
             .end_cell();
-        mint_tokens(prev_owner, jetton_wallet_code, 50000000, master_msg, parts_count, nft_holder_code);
+        mint_tokens(prev_owner, jetton_wallet_code, 100000000, master_msg, parts_count, nft_holder_code);
         save_data(total_supply + parts_count, admin_address, content, jetton_wallet_code, frac_data);
 
         send_raw_message(begin_cell()

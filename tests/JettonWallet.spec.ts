@@ -3,15 +3,14 @@ import {
     SandboxContract,
     TreasuryContract,
     Verbosity,
-    internal,
-    printTransactionFees
+    internal
 } from '@ton-community/sandbox';
 import { Cell, toNano, beginCell, Address, SendMode } from 'ton-core';
 import { JettonWallet } from '../wrappers/JettonWallet';
 import { JettonMinter } from '../wrappers/JettonMinter';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
-import { randomAddress, getRandomTon } from './utils';
+import {randomAddress, getRandomTon} from './utils';
 
 /*
    These tests check compliance with the TEP-74 and TEP-89,
@@ -24,7 +23,7 @@ import { randomAddress, getRandomTon } from './utils';
 */
 
 //jetton params
-let fwd_fee = 1804014n, gas_consumption = 15000000n, min_tons_for_storage = 10000000n;
+let fwd_fee = 1804014n, gas_consumption = 30000000n, min_tons_for_storage = 20000000n;
 
 describe('JettonWallet', () => {
     let jwallet_code = new Cell();
@@ -35,6 +34,7 @@ describe('JettonWallet', () => {
     let jettonMinter:SandboxContract<JettonMinter>;
     let userWallet:(address: Address) => Promise<SandboxContract<JettonWallet>>;
     let defaultContent:Cell;
+    let addresses: { [key: string]: string } = {};
 
     beforeAll(async () => {
         jwallet_code   = await compile('JettonWallet');
@@ -64,6 +64,7 @@ describe('JettonWallet', () => {
                 await jettonMinter.getWalletAddress(address)
             )
         );
+
     });
 
     // implementation detail
@@ -75,6 +76,12 @@ describe('JettonWallet', () => {
             to: jettonMinter.address,
             deploy: true,
         });
+        addresses = {
+            [deployer.address.toString()]: 'deployer',
+            [notDeployer.address.toString()]: 'notDeployer',
+            [(await jettonMinter.getWalletAddress(deployer.address)).toString()]: 'deployerJettonWallet',
+            [(await jettonMinter.getWalletAddress(notDeployer.address)).toString()]: 'notDeployerJettonWallet',
+        };
     });
     // implementation detail
     it('minter admin should be able to mint jettons', async () => {
@@ -82,7 +89,7 @@ describe('JettonWallet', () => {
         let initialTotalSupply = await jettonMinter.getTotalSupply();
         const deployerJettonWallet = await userWallet(deployer.address);
         let initialJettonBalance = toNano('1000.23');
-        const mintResult = await jettonMinter.sendMint(deployer.getSender(), deployer.address, initialJettonBalance, toNano('0.05'), toNano('1'), jettonMinter.address);
+        const mintResult = await jettonMinter.sendMint(deployer.getSender(), deployer.address, initialJettonBalance, toNano('0.08'), toNano('1'), jettonMinter.address);
         expect(mintResult.transactions).toHaveTransaction({
             from: jettonMinter.address,
             to: deployerJettonWallet.address,
@@ -174,7 +181,7 @@ describe('JettonWallet', () => {
         let initialJettonBalance2 = await notDeployerJettonWallet.getJettonBalance();
         let sentAmount = toNano('0.5');
         let forwardAmount = toNano('0.05');
-        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.13'), //tons
+        const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.2'), //tons
             sentAmount, notDeployer.address,
             deployer.address, null, forwardAmount, null);
         expect(sendResult.transactions).toHaveTransaction({ //excesses
@@ -350,7 +357,7 @@ describe('JettonWallet', () => {
         const someJettonWallet = await userWallet(someAddress);
         let initialJettonBalance2 = await someJettonWallet.getJettonBalance();
         await deployer.send({value:toNano('1'), bounce:false, to: deployerJettonWallet.address});
-        let forwardAmount = toNano('0.3');
+        let forwardAmount = toNano('0.4');
         /*
                      forward_ton_amount +
                      fwd_count * fwd_fee +
@@ -492,7 +499,7 @@ describe('JettonWallet', () => {
         let initialJettonBalance   = await deployerJettonWallet.getJettonBalance();
         let initialTotalSupply     = await jettonMinter.getTotalSupply();
         let burnAmount   = toNano('0.01');
-        let fwd_fee      = 1492012n /*1500012n*/, gas_consumption = 15000000n;
+        let fwd_fee      = 1492012n /*1500012n*/, gas_consumption = 30000000n;
         let minimalFee   = fwd_fee + 2n*gas_consumption;
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount

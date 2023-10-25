@@ -64,4 +64,4 @@ const int op::change_minter_content = 0x1657df13;
 const int op::change_minter_admin = 0x2582c414;
 const int op::withdraw_ton = 0x4d40386f;
 
-const int fee::pool_creation = 1000000000;
+const int fee::pool_creation = 200000000; ;; 0.2 TON

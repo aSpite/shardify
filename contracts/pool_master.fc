@@ -18,12 +18,15 @@ global int storage::public_key;
     );
 }
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
     if (in_msg_body.slice_empty?()) {
         return();
     }
     slice cs = in_msg_full.begin_parse();
     int flags = cs~load_uint(4);
+    if (flags & 1) {
+        return ();
+    }
     slice sender_address = cs~load_msg_addr();
 
     int op = in_msg_body~load_uint(32);
@@ -36,7 +39,6 @@ global int storage::public_key;
         throw_unless(error::unauthorized, check_signature(cell_hash(payload), signature, storage::public_key));
         slice ps = payload.begin_parse();
         int price = ps~load_coins();
-        ;; TODO: Handle creation fee
         throw_unless(error::insufficient_gas, msg_value >= (price + fee::pool_creation));
         cell init_data = begin_cell()
             .store_coins(0)

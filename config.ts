@@ -1,7 +1,3 @@
-// const int op::mint = 21;
-// const int op::provide_wallet_address = 0x2c76b973;
-// const int op::take_wallet_address = 0xd1735400;
-// const int op::fractionalization_fee = 6;
 
 export const OPCODES = {
     NFT_TRANSFER: 0x5fcc3d14,
@@ -19,10 +15,18 @@ export const OPCODES = {
     JETTON_BURN: 0x595f07bc,
     JETTON_BURN_NOTIFICATION: 0x7bdd97de,
 
-    MINTER_CHANGE_PUBKEY: 0x39e3c76e,
+    MINTER_CHANGE_PUBKEY: 0x770e2c37,
 
-    POOL_MASTER_CREATE_POOL: 0x198a7cad
+    POOL_MASTER_CREATE_POOL: 0x198a7cad,
+    POOL_MASTER_ADDR_CHANGE_ADMIN: 0x4defafe5,
+    POOL_MASTER_SIGN_CHANGE_ADMIN: 0x4d0ad1a0,
+    POOL_MASTER_CHANGE_MINTER_PUBKEY: 0x7d20ca6c,
+    POOL_MASTER_WITHDRAW_NFT_MINTER: 0x685abee9,
+    POOL_MASTER_CHANGE_MINTER_CONTENT: 0x1657df13,
+    POOL_MASTER_CHANGE_MINTER_ADMIN: 0x2582c414,
+    POOL_MASTER_WITHDRAW_TON: 0x4d40386f
 }
+
 
 export const ERRORS = {
     UNAUTHORIZED: 100,

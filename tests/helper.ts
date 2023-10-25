@@ -42,3 +42,4 @@ export function getFracBody(validUntil: number, nftItemIndex: number, nftItemCod
 export function signFracBody(body: Cell, privateKey: Buffer) {
     return sign(body.hash(), privateKey)
 }
+

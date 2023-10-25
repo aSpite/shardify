@@ -1,7 +1,6 @@
 import {
     Blockchain,
     internal,
-    printTransactionFees,
     SandboxContract,
     SmartContractSnapshot,
     TreasuryContract
@@ -17,6 +16,7 @@ import {OPCODES} from "../config";
 import {NftHolder} from "../wrappers/NftHolder";
 import {JettonWallet} from "../wrappers/JettonWallet";
 import {PoolMaster} from "../wrappers/PoolMaster";
+import {printTransactionFees} from "./utils";
 
 describe('Fractionalization', () => {
     let blockchain: Blockchain
@@ -49,6 +49,7 @@ describe('Fractionalization', () => {
 
     // ----- Others -----
     let keyPair: KeyPair;
+    let keyPair2: KeyPair;
 
     beforeAll(async () => {
         blockchain = await Blockchain.create();
@@ -61,6 +62,7 @@ describe('Fractionalization', () => {
         user = await blockchain.treasury('user');
         nftOwner = await blockchain.treasury('nft owner');
         keyPair = await mnemonicToWalletKey('harbor lobster spin vessel lamp text check magic stone element abstract guide citizen praise tube reject patch what stuff space fork radio symbol brother'.split(' '));
+        keyPair2 = await mnemonicToWalletKey('teach crew goat trouble gentle yellow solution iron broken task kiwi stay ladder flame merry actual home connect episode try protect salmon machine cushion'.split(' '));
 
         poolMaster = blockchain.openContract(PoolMaster.createFromConfig({
             adminAddress: admin.address,
@@ -187,7 +189,7 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(minterData.publicKey).toStrictEqual(bufferToBigInt(keyPair.publicKey));
         expect(minterData.collectionAddress.toString()).toStrictEqual(collectionAddress.toString());
         expect(minterData.creatorAddress.toString()).toStrictEqual(poolCreator.address.toString());
-        printTransactionFees(result.transactions)
+        printTransactionFees(result.transactions, 'creating pool');
     });
 
     it('fractionalization', async () => {
@@ -203,7 +205,7 @@ Pool master address: ${poolMaster.address.toString()}`);
         let result = await nft.sendTransfer(nftOwner.getSender(), toNano(30), 3, jettonMinter.address,
             nftOwner.address, toNano(28), forwardPayload);
         nftAfterSent = (await blockchain.getContract(nft.address)).snapshot();
-        printTransactionFees(result.transactions)
+        printTransactionFees(result.transactions, 'fractionalization');
         expect(result.transactions).toHaveTransaction({
             from: nft.address,
             to: jettonMinter.address,
@@ -258,7 +260,7 @@ Pool master address: ${poolMaster.address.toString()}`);
             success: true,
             op: OPCODES.EXCESSES
         });
-        console.log(result.transactions);
+
         const walletData = await jettonWallet.getWalletData();
         expect(walletData.balance).toStrictEqual(50n);
         const holderData = await nftHolder.getHolderData();
@@ -272,7 +274,7 @@ Pool master address: ${poolMaster.address.toString()}`);
     it('handle fail when defrac', async () => {
         (await blockchain.getContract(nft.address)).loadFrom(nftBeforeSent);
         let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(2), 4n, nft.address);
-        printTransactionFees(result.transactions)
+        printTransactionFees(result.transactions, 'handle fail when defrac')
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
             to: nftHolder.address,
@@ -317,7 +319,7 @@ Pool master address: ${poolMaster.address.toString()}`);
 
     it('defractionalization', async () => {
         let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(1), 4n, nft.address);
-        printTransactionFees(result.transactions)
+        printTransactionFees(result.transactions, 'defractionalization')
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
             to: nftHolder.address,
@@ -355,11 +357,108 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(holderData.lastTakerAddress).toBeNull();
     });
 
-    it('should change public key', async () => {
-
+    it('should change admin address by admin address', async () => {
+        const result = await poolMaster.sendChangeAdminAddr(
+            admin.getSender(), toNano(1), 0n, poolCreator.address
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: admin.address,
+            to: poolMaster.address,
+            success: true
+        });
+        const data = await poolMaster.getAdminData();
+        expect(data.adminAddress.toString()).toStrictEqual(poolCreator.address.toString());
     });
 
-    it('should create pool', async () => {
+    it('should change admin address by signature', async () => {
+        const newAddr = beginCell()
+            .storeUint(Math.floor(Date.now() / 1000) + 60, 32)
+            .storeAddress(admin.address)
+            .endCell();
+        const signature = sign(newAddr.hash(), keyPair.secretKey);
+        const result = await poolMaster.sendChangeAdminSign(poolCreator.getSender(),
+            toNano(1), 0n, signature, newAddr
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolCreator.address,
+            to: poolMaster.address,
+            success: true
+        });
+        const data = await poolMaster.getAdminData();
+        expect(data.adminAddress.toString()).toStrictEqual(admin.address.toString());
+    });
 
+    it('should change minter public key', async () => {
+        await jettonMinter.getFracData();
+        const result = await poolMaster.sendChangeMinterPubKey(admin.getSender(),
+            toNano(1),
+            0n,
+            jettonMinter.address,
+            keyPair2.publicKey
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolMaster.address,
+            to: jettonMinter.address,
+            success: true
+        });
+        // printTransactionFees(result.transactions)
+        const data = await jettonMinter.getFracData();
+        expect(data.publicKey).toStrictEqual(bufferToBigInt(keyPair2.publicKey));
+    });
+
+    it('should withdraw nft', async () => {
+       await nft.sendTransfer(nftOwner.getSender(), toNano('0.05'), 0, jettonMinter.address, nftOwner.address, 0n);
+       let data = await nft.getNftData();
+       expect(data.owner!.toString()).toStrictEqual(jettonMinter.address.toString());
+       const result = await poolMaster.sendMinterWithdrawNft(admin.getSender(),
+              toNano(1), 0n, jettonMinter.address, nft.address, nftOwner.address);
+       expect(result.transactions).toHaveTransaction({
+          from: nft.address,
+          to: nftOwner.address,
+          success: true,
+          op: OPCODES.EXCESSES
+       });
+       data = await nft.getNftData();
+       expect(data.owner!.toString()).toStrictEqual(nftOwner.address.toString());
+    });
+
+    it('should change minter content', async () => {
+        const newContent = beginCell().storeUint(444, 32).endCell();
+        const result = await poolMaster.sendChangeMinterContent(admin.getSender(),
+            toNano(1), 0n, jettonMinter.address, newContent
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolMaster.address,
+            to: jettonMinter.address,
+            success: true
+        });
+        expect((await jettonMinter.getContent()).hash().toString('hex')).toStrictEqual(newContent.hash().toString('hex'));
+    });
+
+    it('should change minter admin', async () => {
+        const result = await poolMaster.sendChangeMinterAdmin(admin.getSender(),
+            toNano(1), 0n, jettonMinter.address, user.address
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolMaster.address,
+            to: jettonMinter.address,
+            success: true
+        });
+        expect((await jettonMinter.getAdminAddress()).toString()).toStrictEqual(user.address.toString());
+
+        await jettonMinter.sendChangeAdmin(user.getSender(), admin.address);
+        expect((await jettonMinter.getAdminAddress()).toString()).toStrictEqual(admin.address.toString());
+    });
+
+    it('should withdraw ton', async () => {
+        const result = await poolMaster.sendWithdrawTon(admin.getSender(),
+            toNano(1), 0n
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolMaster.address,
+            to: admin.address,
+            success: true
+        });
+        expect((await blockchain.getContract(poolMaster.address)).balance).toStrictEqual(10_000_000n);
     });
 });

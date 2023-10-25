@@ -261,7 +261,7 @@
         throw_unless(error::unauthorized, equal_slices(sender_address, admin_address));
         int new_public_key = in_msg_body~load_uint(256);
         cell new_frac_data = begin_cell()
-            .store_uint(parts_count, 32)
+            .store_coins(parts_count)
             .store_ref(nft_holder_code)
             .store_uint(new_public_key, 256)
             .store_slice(collection_address)

@@ -113,19 +113,6 @@ describe('Fractionalization', () => {
             success: true
         });
 
-
-        // let deployResult = await jettonMinter.sendDeploy(poolCreator.getSender(), toNano(1));
-        // expect(deployResult.transactions).toHaveTransaction({
-        //     from: poolCreator.address,
-        //     to: jettonMinter.address,
-        //     deploy: true,
-        //     success: true
-        // });
-        // let data = await jettonMinter.getJettonData();
-        // expect(data.content.hash().toString('hex')).toStrictEqual(defaultContent.hash().toString('hex'));
-        // expect((await jettonMinter.getWalletAddress(user.address)).toString())
-        //     .toStrictEqual(getJettonWallet(user.address, jettonMinter.address, jettonWalletCode, 50n, nftHolderCode).toString());
-
         nftHolder = blockchain.openContract(NftHolder.createFromConfig({
             jettonMasterAddress: jettonMinter.address,
             nftAddress: nft.address
@@ -179,6 +166,7 @@ Pool master address: ${poolMaster.address.toString()}`);
             .endCell();
         const payload = beginCell()
             .storeCoins(toNano(10))
+            .storeUint(Math.floor(Date.now() / 1000) + 60, 32)
             .storeRef(defaultContent)
             .storeRef(jettonWalletCode)
             .storeRef(fracData)
@@ -259,15 +247,15 @@ Pool master address: ${poolMaster.address.toString()}`);
             op: OPCODES.JETTON_INTERNAL_TRANSFER,
         });
         expect(result.transactions).toHaveTransaction({
-            from: jettonMinter.address,
-            to: nftOwner.address,
-            success: true
-        });
-        expect(result.transactions).toHaveTransaction({
             from: nft.address,
             to: nftHolder.address,
             success: true,
             op: OPCODES.NFT_OWNERSHIP_ASSIGNED
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: nftHolder.address,
+            to: nftOwner.address,
+            success: true,
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonWallet.address,
@@ -275,7 +263,6 @@ Pool master address: ${poolMaster.address.toString()}`);
             success: true,
             op: OPCODES.EXCESSES
         });
-
         const walletData = await jettonWallet.getWalletData();
         expect(walletData.balance).toStrictEqual(50n);
         const holderData = await nftHolder.getHolderData();
@@ -284,7 +271,7 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(holderData.nftAddress.toString()).toStrictEqual(nft.address.toString());
         expect(holderData.jettonMasterAddress.toString()).toStrictEqual(jettonMinter.address.toString());
         expect(await jettonMinter.getTotalSupply()).toStrictEqual(50n);
-        // gas consumption ~ 0.75 TON
+        // gas consumption ~ 0.2 TON
         console.log(`NFT owner balance change: ${((await nftOwner.getBalance()) - balanceBefore).toLocaleString()}
 Jetton minter balance change: ${((await blockchain.getContract(jettonMinter.address)).balance - minterBalanceBefore).toLocaleString()}`);
         const blockchainBefore = blockchain.snapshot();
@@ -355,7 +342,7 @@ Jetton minter balance change: ${((await blockchain.getContract(jettonMinter.addr
 
     it('defractionalization', async () => {
         const holderBalanceBefore = (await blockchain.getContract(nftHolder.address)).balance;
-        let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano(1), 4n, nft.address);
+        let result = await jettonWallet.sendReturnNft(nftOwner.getSender(), toNano('0.5'), 4n, nft.address);
         // gas consumption ~ 0,042396 TON
         printTransactionFees(result.transactions, 'defractionalization', addresses)
         expect(result.transactions).toHaveTransaction({
@@ -442,7 +429,7 @@ NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).ba
             to: jettonMinter.address,
             success: true
         });
-        // printTransactionFees(result.transactions)
+        printTransactionFees(result.transactions, 'change minter public key', addresses)
         const data = await jettonMinter.getFracData();
         expect(data.publicKey).toStrictEqual(bufferToBigInt(keyPair2.publicKey));
     });
@@ -459,6 +446,7 @@ NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).ba
           success: true,
           op: OPCODES.EXCESSES
        });
+       printTransactionFees(result.transactions, 'withdraw nft', addresses);
        data = await nft.getNftData();
        expect(data.owner!.toString()).toStrictEqual(nftOwner.address.toString());
     });

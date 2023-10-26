@@ -80,7 +80,15 @@ slice zero_address() asm "b{00} PUSHSLICE";
         storage::holder_code = in_msg_body~load_ref();
         storage::own_nft? = false;
         storage::last_taker_address = zero_address();
-        in_msg_body.end_parse();
+        raw_reserve(fee::holder_storage, 0);
+        send_raw_message(begin_cell()
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(in_msg_body)
+            .store_coins(0)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(op::excesses, 32)
+            .store_uint(0, 64)
+            .end_cell(), 130); ;; ignore errors
         save_data();
         return();
     }

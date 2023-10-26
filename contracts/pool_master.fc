@@ -40,6 +40,8 @@ global int storage::public_key;
         slice ps = payload.begin_parse();
         int price = ps~load_coins();
         throw_unless(error::insufficient_gas, msg_value >= (price + fee::pool_creation));
+        int valid_until = ps~load_uint(32);
+        throw_unless(error::unauthorized, valid_until > now());
         cell init_data = begin_cell()
             .store_coins(0)
             .store_slice(my_address())
@@ -107,7 +109,7 @@ global int storage::public_key;
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(minter_address)
-            .store_coins(1000000000) ;; 0.01 TON
+            .store_coins(10000000) ;; 0.01 TON
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
             .store_uint(op::change_pubkey, 32)
             .store_uint(query_id, 64)

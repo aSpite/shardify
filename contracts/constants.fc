@@ -9,9 +9,8 @@ const int op::defrac_nft = 0x3a0f1e4c;
 
 const int fee::jetton_wallet_comsumption = 30000000; ;; 0.03 TON
 const int fee::jetton_wallet_storage = 20000000; ;; 0.02 TON
-const int fee::jetton_defrac_nft = 100000000; ;; 0.1 TON
+const int fee::jetton_defrac_nft = 500000000; ;; 0.5 TON
 
-const int error::insufficient_gas = 104;
 const int error::insufficient_balance = 105;
 const int error::not_nft_holder = 106;
 
@@ -25,7 +24,7 @@ const int op::fractionalization_fee = 0x363f8bc6;
 
 const int const::workchain = 0;
 const int fee::provide_address = 10000000; ;; 0.01 TON
-const int fee::fractionalization = 1000000000; ;; 1 TON
+const int fee::fractionalization = 300000000; ;; 0.3 TON
 const int fee::minter_storage = 50000000; ;; 0.05 TON
 
 ;; NFT Item
@@ -44,13 +43,9 @@ const int op::return_nft = 0x1a3fdbcf;
 const int op::return_fail = 0xbd017ec7;
 const int op::repeat_return = 0x6855e245;
 
-const int error::unauthorized = 100;
 const int error::wrong_nft = 101;
 const int error::not_own = 102;
 const int error::not_nft_transfer = 103;
-
-const int flag::bounceable = 0x18;
-const int flag::non_bounceable = 0x10;
 
 const int fee::holder_storage = 30000000; ;; 0.03 TON
 
@@ -65,3 +60,9 @@ const int op::change_minter_admin = 0x2582c414;
 const int op::withdraw_ton = 0x4d40386f;
 
 const int fee::pool_creation = 200000000; ;; 0.2 TON
+
+
+const int flag::bounceable = 0x18;
+const int flag::non_bounceable = 0x10;
+const int error::unauthorized = 100;
+const int error::insufficient_gas = 104;

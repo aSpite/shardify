@@ -50,7 +50,7 @@ defrac_nft#3a0f1e4c query_id:uint64 nft_address:MsgAddressInt = InternalMsgBody;
 // ----- Pool Master -----
 _ admin_address:MsgAddressInt public_key:uint256 = PoolMasterStorage;
 
-_ price:Coins collection_content:^Cell jetton_wallet_code:^Cell fractionalization_data:^FracData = PoolCreationPayload;
+_ price:Coins valid_until:uint32 collection_content:^Cell jetton_wallet_code:^Cell fractionalization_data:^FracData = PoolCreationPayload;
 create_pool#198a7cad query_id:uint64 signature:bits512 payload:^PoolCreationPayload
   jetton_minter_code:^Cell = InternalMsgBody; // 0x998a7cad & 0x7fffffff = 0x198a7cad
 change_admin#4defafe5 query_id:uint64 new_admin_address:MsgAddressInt = InternalMsgBody; // cdefafe5 & 0x7fffffff = 4defafe5

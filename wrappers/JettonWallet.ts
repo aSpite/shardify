@@ -17,6 +17,11 @@ export type JettonData = {
     jettonWalletCode: Cell
 };
 
+export type JettonFracData = {
+    partsCount: bigint,
+    holderCode: Cell
+};
+
 export function jettonWalletConfigToCell(config: JettonWalletConfig): Cell {
     return beginCell()
         .storeCoins(config.balance)
@@ -129,6 +134,14 @@ export class JettonWallet implements Contract {
             ownerAddress: result.stack.readAddress(),
             masterAddress: result.stack.readAddress(),
             jettonWalletCode: result.stack.readCell()
+        }
+    }
+
+    async getFracData(provider: ContractProvider): Promise<JettonFracData> {
+        const result = await provider.get('get_frac_data', []);
+        return {
+            partsCount: result.stack.readBigNumber(),
+            holderCode: result.stack.readCell()
         }
     }
 }

@@ -39,6 +39,7 @@ change_pubkey#770e2c37 query_id:uint64 public_key:uint256 = InternalMsgBody; // 
 withdraw_nft#502c1cc2 query_id:uint64 nft_address:MsgAddressInt
   destination_address:MsgAddressInt = InternalMsgBody; // 0x502c1cc2 & 0x7fffffff = 0x502c1cc2
 fractionalization_fee#363f8bc6 query_id:uint64 = InternalMsgBody; // 0x363f8bc6 & 0x7fffffff = 0x363f8bc6
+withdraw_ton#4d40386f query_id:uint64 = InternalMsgBody; // 4d40386f & 0x7fffffff = 0x4d40386f
 
 // ----- Jetton Wallet -----
 _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt
@@ -60,6 +61,7 @@ change_minter_public_key#7d20ca6c query_id:uint64 minter_address:MsgAddressInt n
   InternalMsgBody; // 7d20ca6c & 0x7fffffff = 0x7d20ca6c
 withdraw_nft_minter#685abee9 query_id:uint64 minter_address:MsgAddressInt nftAddress:uint256
   destination_address:MsgAddressInt = InternalMsgBody; // 0x685abee9 & 0x7fffffff = 0x685abee9
+withdraw_ton_minter#194e82a0 query_id:uint64 minter_address:MsgAddressInt = InternalMsgBody; // 0x194e82a0 & 0x7fffffff = 0x194e82a0
 change_minter_content#1657df13 query_id:uint64 minter_address:MsgAddressInt new_content:^Cell =
   InternalMsgBody; // 0x9657df13 & 0x7fffffff = 0x1657df13
 change_minter_admin#2582c414 query_id:uint64 minter_address:MsgAddressInt new_admin_address:MsgAddressInt =

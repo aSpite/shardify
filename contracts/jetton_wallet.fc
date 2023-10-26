@@ -312,3 +312,8 @@ This is suitable for most tokens, if you need tokens transferable between workch
     (int balance, slice owner, slice master, cell my_code, _, _) = load_data();
     return (balance, owner, master, my_code);
 }
+
+(int, cell) get_frac_data() method_id {
+    (_, _, _, _, int parts_count, cell nft_holder_code) = load_data();
+    return (parts_count, nft_holder_code);
+}

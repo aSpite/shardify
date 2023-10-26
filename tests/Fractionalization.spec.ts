@@ -271,6 +271,9 @@ Pool master address: ${poolMaster.address.toString()}`);
         expect(holderData.nftAddress.toString()).toStrictEqual(nft.address.toString());
         expect(holderData.jettonMasterAddress.toString()).toStrictEqual(jettonMinter.address.toString());
         expect(await jettonMinter.getTotalSupply()).toStrictEqual(50n);
+        const jettonFracData = await jettonWallet.getFracData();
+        expect(jettonFracData.partsCount).toStrictEqual(50n);
+        expect(jettonFracData.holderCode.hash().toString('hex')).toStrictEqual(nftHolderCode.hash().toString('hex'));
         // gas consumption ~ 0.2 TON
         console.log(`NFT owner balance change: ${((await nftOwner.getBalance()) - balanceBefore).toLocaleString()}
 Jetton minter balance change: ${((await blockchain.getContract(jettonMinter.address)).balance - minterBalanceBefore).toLocaleString()}`);
@@ -475,8 +478,8 @@ NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).ba
         });
         expect((await jettonMinter.getAdminAddress()).toString()).toStrictEqual(user.address.toString());
 
-        await jettonMinter.sendChangeAdmin(user.getSender(), admin.address);
-        expect((await jettonMinter.getAdminAddress()).toString()).toStrictEqual(admin.address.toString());
+        await jettonMinter.sendChangeAdmin(user.getSender(), poolMaster.address);
+        expect((await jettonMinter.getAdminAddress()).toString()).toStrictEqual(poolMaster.address.toString());
     });
 
     it('should withdraw ton', async () => {
@@ -489,5 +492,29 @@ NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).ba
             success: true
         });
         expect((await blockchain.getContract(poolMaster.address)).balance).toStrictEqual(10_000_000n);
+    });
+
+    it('should withdraw ton from minter', async () => {
+        await blockchain.sendMessage(internal({
+            from: admin.address,
+            to: jettonMinter.address,
+            value: toNano(20)
+        }));
+
+        const result = await poolMaster.sendWithdrawTonMinter(admin.getSender(),
+            toNano(1), 0n, jettonMinter.address
+        );
+        expect(result.transactions).toHaveTransaction({
+            from: poolMaster.address,
+            to: jettonMinter.address,
+            success: true,
+            op: OPCODES.WITHDRAW_TON
+        });
+        expect(result.transactions).toHaveTransaction({
+            from: jettonMinter.address,
+            to: poolMaster.address,
+            success: true
+        });
+        expect((await blockchain.getContract(jettonMinter.address)).balance).toStrictEqual(50000000n);
     });
 });

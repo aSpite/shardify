@@ -196,6 +196,24 @@ export class PoolMaster implements Contract {
         });
     }
 
+    async sendWithdrawTonMinter(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        queryID: bigint,
+        minterAddress: Address
+    ) {
+        await provider.internal(via, {
+           value,
+           sendMode: SendMode.PAY_GAS_SEPARATELY,
+           body: beginCell()
+               .storeUint(OPCODES.POOL_MASTER_WITHDRAW_TON_MINTER, 32)
+               .storeUint(queryID, 64)
+               .storeAddress(minterAddress)
+               .endCell()
+        });
+    }
+
     async getAdminData(provider: ContractProvider): Promise<PoolAdminData> {
         const result = await provider.get('get_admin_data', []);
         return {

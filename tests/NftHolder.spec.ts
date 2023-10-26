@@ -44,7 +44,7 @@ describe('NftHolder', () => {
         }, code));
 
         const holderDeployResult = await nftHolder.sendDeploy(
-            masterTreasury.getSender(), toNano('0.05'), 50n, jettonWalletCode, code
+            masterTreasury.getSender(), toNano('0.05'), 50n, jettonWalletCode, code, masterTreasury.address
         );
 
         expect(holderDeployResult.transactions).toHaveTransaction({

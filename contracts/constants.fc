@@ -21,6 +21,7 @@ const int op::take_wallet_address = 0xd1735400;
 const int op::change_pubkey = 0x770e2c37;
 const int op::withdraw_nft = 0x502c1cc2;
 const int op::fractionalization_fee = 0x363f8bc6;
+const int op::withdraw_ton = 0x4d40386f;
 
 const int const::workchain = 0;
 const int fee::provide_address = 10000000; ;; 0.01 TON
@@ -58,6 +59,7 @@ const int op::withdraw_nft_minter = 0x685abee9;
 const int op::change_minter_content = 0x1657df13;
 const int op::change_minter_admin = 0x2582c414;
 const int op::withdraw_ton = 0x4d40386f;
+const int op::withdraw_ton_minter = 0x194e82a0;
 
 const int fee::pool_creation = 200000000; ;; 0.2 TON
 

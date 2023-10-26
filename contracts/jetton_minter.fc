@@ -241,13 +241,13 @@
         save_data(total_supply + parts_count, admin_address, content, jetton_wallet_code, frac_data);
 
         send_raw_message(begin_cell()
-        .store_uint(flag::non_bounceable, 6)
-        .store_slice(sender_address)
-        .store_coins(0)
-        .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-        .store_ref(get_nft_transfer_body(query_id, holder_address, prev_owner, 20000000,
-            begin_cell().store_slice(prev_owner).end_cell()))
-        .end_cell(), 128); ;; ignore errors
+            .store_uint(flag::non_bounceable, 6)
+            .store_slice(sender_address)
+            .store_coins(0)
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_ref(get_nft_transfer_body(query_id, holder_address, prev_owner, 20000000,
+                begin_cell().store_slice(prev_owner).end_cell()))
+            .end_cell(), 128);
         return ();
     }
 
@@ -270,6 +270,18 @@
         slice nft_address = in_msg_body~load_msg_addr();
         slice destionation_address = in_msg_body~load_msg_addr();
         return_nft(nft_address, query_id, destionation_address);
+        return ();
+    }
+
+    if (op == op::withdraw_ton) {
+        throw_unless(error::unauthorized, equal_slices(sender_address, admin_address));
+        raw_reserve(fee::minter_storage, 0);
+        send_raw_message(begin_cell()
+            .store_uint(flag::bounceable, 6)
+            .store_slice(sender_address)
+            .store_coins(0)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .end_cell(), 128);
         return ();
     }
 

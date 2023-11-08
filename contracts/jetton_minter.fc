@@ -273,7 +273,7 @@
         return ();
     }
 
-    if (op == op::withdraw_ton) {
+    if (op == op::withdraw_ton_minter) {
         throw_unless(error::unauthorized, equal_slices(sender_address, admin_address));
         raw_reserve(fee::minter_storage, 0);
         send_raw_message(begin_cell()

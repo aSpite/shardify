@@ -21,7 +21,7 @@ const int op::take_wallet_address = 0xd1735400;
 const int op::change_pubkey = 0x770e2c37;
 const int op::withdraw_nft = 0x502c1cc2;
 const int op::fractionalization_fee = 0x363f8bc6;
-const int op::withdraw_ton = 0x4d40386f;
+const int op::withdraw_ton_minter  = 0x4871ede5;
 
 const int const::workchain = 0;
 const int fee::provide_address = 10000000; ;; 0.01 TON
@@ -52,14 +52,14 @@ const int fee::holder_storage = 30000000; ;; 0.03 TON
 
 ;; Pool Master
 const int op::create_pool = 0x198a7cad;
-const int op::addr_change_admin = 0x4defafe5;
-const int op::sign_change_admin = 0x4d0ad1a0;
+const int op::addr_change_admin = 0x211b3197;
+const int op::sign_change_admin = 0xbab1388;
 const int op::change_minter_pubkey = 0x7d20ca6c;
-const int op::withdraw_nft_minter = 0x685abee9;
+const int op::withdraw_nft_minter = 0x55fc365f;
 const int op::change_minter_content = 0x1657df13;
 const int op::change_minter_admin = 0x2582c414;
-const int op::withdraw_ton = 0x4d40386f;
-const int op::withdraw_ton_minter = 0x194e82a0;
+const int op::withdraw_ton_master = 0x541b33c;
+const int op::withdraw_ton_from_minter = 0x6e8ad462;
 
 const int fee::pool_creation = 200000000; ;; 0.2 TON
 

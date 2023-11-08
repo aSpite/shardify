@@ -508,7 +508,7 @@ NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).ba
             from: poolMaster.address,
             to: jettonMinter.address,
             success: true,
-            op: OPCODES.WITHDRAW_TON
+            op: OPCODES.MINTER_WITHDRAW_TON
         });
         expect(result.transactions).toHaveTransaction({
             from: jettonMinter.address,

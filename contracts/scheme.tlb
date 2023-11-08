@@ -39,7 +39,7 @@ change_pubkey#770e2c37 query_id:uint64 public_key:uint256 = InternalMsgBody; // 
 withdraw_nft#502c1cc2 query_id:uint64 nft_address:MsgAddressInt
   destination_address:MsgAddressInt = InternalMsgBody; // 0x502c1cc2 & 0x7fffffff = 0x502c1cc2
 fractionalization_fee#363f8bc6 query_id:uint64 = InternalMsgBody; // 0x363f8bc6 & 0x7fffffff = 0x363f8bc6
-withdraw_ton#4d40386f query_id:uint64 = InternalMsgBody; // 4d40386f & 0x7fffffff = 0x4d40386f
+withdraw_ton_minter#4871ede5 query_id:uint64 = InternalMsgBody; // 0xc871ede5 & 0x7fffffff = 0x4871ede5
 
 // ----- Jetton Wallet -----
 _ balance:Coins owner_address:MsgAddressInt jetton_master_address:MsgAddressInt
@@ -54,16 +54,16 @@ _ admin_address:MsgAddressInt public_key:uint256 = PoolMasterStorage;
 _ price:Coins valid_until:uint32 collection_content:^Cell jetton_wallet_code:^Cell fractionalization_data:^FracData = PoolCreationPayload;
 create_pool#198a7cad query_id:uint64 signature:bits512 payload:^PoolCreationPayload
   jetton_minter_code:^Cell = InternalMsgBody; // 0x998a7cad & 0x7fffffff = 0x198a7cad
-change_admin#4defafe5 query_id:uint64 new_admin_address:MsgAddressInt = InternalMsgBody; // cdefafe5 & 0x7fffffff = 4defafe5
-change_admin#4d0ad1a0 query_id:uint64 signature:bits512 ^[ valid_until:uint32 new_admin_address:MsgAddressInt ] =
-  InternalMsgBody; // 4d0ad1a0 & 0x7fffffff = 4d0ad1a0
+change_admin_addr#211b3197 query_id:uint64 new_admin_address:MsgAddressInt = InternalMsgBody; // 0x211b3197 & 0x7fffffff = 0x211b3197
+change_admin_sign#bab1388 query_id:uint64 signature:bits512 ^[ valid_until:uint32 new_admin_address:MsgAddressInt ] =
+  InternalMsgBody; // 0x0bab1388 & 0x7fffffff = 0x0bab1388
 change_minter_public_key#7d20ca6c query_id:uint64 minter_address:MsgAddressInt new_public_key:uint256 =
   InternalMsgBody; // 7d20ca6c & 0x7fffffff = 0x7d20ca6c
-withdraw_nft_minter#685abee9 query_id:uint64 minter_address:MsgAddressInt nftAddress:uint256
-  destination_address:MsgAddressInt = InternalMsgBody; // 0x685abee9 & 0x7fffffff = 0x685abee9
-withdraw_ton_minter#194e82a0 query_id:uint64 minter_address:MsgAddressInt = InternalMsgBody; // 0x194e82a0 & 0x7fffffff = 0x194e82a0
+withdraw_nft_from_minter#55fc365f query_id:uint64 minter_address:MsgAddressInt nftAddress:uint256
+  destination_address:MsgAddressInt = InternalMsgBody; // 0x55fc365f & 0x7fffffff = 0x55fc365f
+withdraw_ton_from_minter#6e8ad462 query_id:uint64 minter_address:MsgAddressInt = InternalMsgBody; // 0xee8ad462 & 0x7fffffff = 0x6e8ad462
 change_minter_content#1657df13 query_id:uint64 minter_address:MsgAddressInt new_content:^Cell =
   InternalMsgBody; // 0x9657df13 & 0x7fffffff = 0x1657df13
 change_minter_admin#2582c414 query_id:uint64 minter_address:MsgAddressInt new_admin_address:MsgAddressInt =
   InternalMsgBody; // 0x2582c414 & 0x7fffffff = 0x2582c414
-withdraw_ton#4d40386f query_id:uint64 = InternalMsgBody; // 0x4d40386f & 0x7fffffff = 0x4d40386f
+withdraw_ton_master#541b33c query_id:uint64 = InternalMsgBody; // 0x0541b33c & 0x7fffffff = 0x541b33c

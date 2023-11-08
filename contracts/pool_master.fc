@@ -136,14 +136,14 @@ global int storage::public_key;
         return();
     }
 
-    if(op == op::withdraw_ton_minter) {
+    if(op == op::withdraw_ton_from_minter) {
         throw_unless(error::unauthorized, equal_slices(sender_address, storage::admin_address));
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(in_msg_body)
             .store_coins(0)
             .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(op::withdraw_ton, 32)
+            .store_uint(op::withdraw_ton_minter, 32)
             .store_uint(query_id, 64)
             .end_cell(), 64);
         return();
@@ -179,7 +179,7 @@ global int storage::public_key;
         return();
     }
 
-    if(op == op::withdraw_ton) {
+    if(op == op::withdraw_ton_master) {
         throw_unless(error::unauthorized, equal_slices(sender_address, storage::admin_address));
         raw_reserve(10000000, 0); ;; 0.01 TON
         send_raw_message(begin_cell()

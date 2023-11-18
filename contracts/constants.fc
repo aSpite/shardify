@@ -68,3 +68,4 @@ const int flag::bounceable = 0x18;
 const int flag::non_bounceable = 0x10;
 const int error::unauthorized = 100;
 const int error::insufficient_gas = 104;
+const int error::old_message = 107;

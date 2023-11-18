@@ -96,7 +96,7 @@
 
     if (op == op::burn_notification) {
         int jetton_amount = in_msg_body~load_coins();
-        slice from_address = in_msg_body~load_msg_addr();
+        slice from_address = in_msg_body~load_msg_addr(); ;; this can be also nft address
         throw_unless(74,
                 equal_slices(calculate_holder_address(calculate_holder_state_init(my_address(), from_address, nft_holder_code)),
                     sender_address)

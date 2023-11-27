@@ -269,7 +269,7 @@ Deployer jetton wallet address: ${deployerJettonWallet.toString()}`);
             success: true,
             op: OPCODES.EXCESSES
         });
-        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(30000000n);
+        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(40000000n);
         let data = await nftHolder.getHolderData();
         expect(data.ownNft).toBeFalsy();
         expect(data.lastTakerAddress).toBeNull();

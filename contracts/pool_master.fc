@@ -4,6 +4,8 @@
 global slice storage::admin_address;
 global int storage::public_key;
 
+int addr_std?(slice addr) asm "b{10000000000} PUSHSLICE SDPPFXREV";
+
 () load_data() impure {
     slice ds = get_data().begin_parse();
     storage::admin_address = ds~load_msg_addr();
@@ -97,6 +99,7 @@ global int storage::public_key;
         slice addr = newAddr.begin_parse();
         int valid_until = addr~load_uint(32);
         throw_unless(error::old_message, valid_until > now());
+        throw_unless(error::interval_too_big, (valid_until - now()) <= 120);
         storage::admin_address = addr;
         save_data();
         return();
@@ -138,6 +141,7 @@ global int storage::public_key;
 
     if(op == op::withdraw_ton_from_minter) {
         throw_unless(error::unauthorized, equal_slices(sender_address, storage::admin_address));
+        throw_unless(error::invalid_addr_std, addr_std?(in_msg_body) == -1);
         send_raw_message(begin_cell()
             .store_uint(flag::bounceable, 6)
             .store_slice(in_msg_body)

@@ -101,7 +101,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
             slice prev_owner = in_msg_body~load_msg_addr();
             send_raw_message(begin_cell()
                 .store_uint(flag::non_bounceable, 6)
-                .store_slice(storage::nft_address)
+                .store_slice(sender)
                 .store_coins(0)
                 .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .store_ref(get_nft_transfer_body(
@@ -126,7 +126,7 @@ slice zero_address() asm "b{00} PUSHSLICE";
     if(op == op::return_nft) {
         int jetton_amount = in_msg_body~load_coins();
         slice nft_address = in_msg_body~load_msg_addr();
-        slice storage::last_taker_address = in_msg_body~load_msg_addr();
+        storage::last_taker_address = in_msg_body~load_msg_addr();
         in_msg_body.end_parse();
         throw_unless(error::unauthorized,
             equal_slices(calculate_user_jetton_wallet_address(storage::last_taker_address, storage::jetton_master_address,

@@ -201,8 +201,9 @@ This is suitable for most tokens, if you need tokens transferable between workch
         jetton_wallet_code, parts_count, nft_holder_code);
 }
 
-() defrac_nft(slice in_msg_body, int msg_value) impure {
+() defrac_nft(slice in_msg_body, int msg_value, slice sender_address) impure {
     (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code, int parts_count, cell nft_holder_code) = load_data();
+    throw_unless(error::unauthorized, equal_slices(owner_address, sender_address));
     throw_unless(error::insufficient_gas, msg_value >= fee::jetton_defrac_nft);
     throw_unless(error::insufficient_balance, balance >= parts_count);
     balance -= parts_count;
@@ -296,7 +297,7 @@ This is suitable for most tokens, if you need tokens transferable between workch
     }
 
     if (op == op::defrac_nft) {
-        defrac_nft(in_msg_body, msg_value);
+        defrac_nft(in_msg_body, msg_value, sender_address);
         return ();
     }
 

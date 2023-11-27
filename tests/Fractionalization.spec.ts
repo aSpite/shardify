@@ -383,7 +383,7 @@ Jetton minter balance change: ${((await blockchain.getContract(jettonMinter.addr
         const holderData = await nftHolder.getHolderData();
         expect(holderData.ownNft).toBeFalsy();
         expect(holderData.lastTakerAddress).toBeNull();
-        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(30000000n);
+        expect((await blockchain.getContract(nftHolder.address)).balance).toStrictEqual(40000000n);
         console.log(`NFT Holder balance before: ${holderBalanceBefore.toLocaleString()}
 NFT Holder balance after: ${(await blockchain.getContract(nftHolder.address)).balance.toLocaleString()}`);
     });
